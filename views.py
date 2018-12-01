@@ -106,12 +106,14 @@ def getRelatedFieldType(model, field):
         return None
 
 
-def getFieldFilters(request, model_instance, type):
+def getFieldFilters(queryDict, model_instance, type):
     model_fields = model_instance.get_fields()
     query = Q()
     query_tuple = None
-    for field in request.GET:
-        if field not in ['project', 'offset', 'limit'] and field[0] != '_': #TODO: offset and limit are okay here but project is a bit dodgy!
+    for field in queryDict:
+        if field == 'project':
+            print('Project used to be filtered out - check why it was needed and adjust query if necessary!') #project used to be in the list below and i have removed it because we might need to filter by project for some things
+        if field not in ['offset', 'limit'] and field[0] != '_':
             if field in model_fields:
                 field_type = model_fields[field]
             elif '__' in field and field.split('__')[0] in model_fields:
@@ -120,7 +122,7 @@ def getFieldFilters(request, model_instance, type):
                 field_type = None
             if field_type == 'ForeignKey':
                 field_type = getRelatedFieldType(model_instance, field)
-            value_list = request.GET.getlist(field)
+            value_list = queryDict[field]
             #we do not support negation with OR so these are only done when we are filtering
             #I just don't think or-ing negatives on the same field key makes any sense
             for value in value_list:
@@ -217,10 +219,13 @@ class ItemList(generics.ListAPIView):
         hits = target.objects.all().select_related(*related_keys)
         if 'supplied_filter' in self.kwargs and self.kwargs['supplied_filter'] is not None:
             hits = hits.filter(self.kwargs['supplied_filter'])
-
-        filter_query = getFieldFilters(self.request, target, 'filter')
-        exclude_query = getFieldFilters(self.request, target, 'exclude')
+        requestQuery = dict(self.request.GET)
+        print(self.request.GET.getlist('work__author__abbreviation'))
+        print('*****')
+        filter_query = getFieldFilters(requestQuery, target, 'filter')
+        exclude_query = getFieldFilters(requestQuery, target, 'exclude')
         hits = hits.exclude(exclude_query).filter(filter_query)
+
         #override fields if required - only used for internal calls from other apps
         if fields:
             self.kwargs['fields'] = fields.split(',')
@@ -315,10 +320,9 @@ class PrivateItemList(generics.ListAPIView):
 
         if 'supplied_filter' in self.kwargs and self.kwargs['supplied_filter'] is not None:
             hits = hits.filter(self.kwargs['supplied_filter'])
-
-        filter_query = getFieldFilters(self.request, target, 'filter')
-
-        exclude_query = getFieldFilters(self.request, target, 'exclude')
+        requestQuery = dict(self.request.GET)
+        filter_query = getFieldFilters(requestQuery, target, 'filter')
+        exclude_query = getFieldFilters(requestQuery, target, 'exclude')
         hits = hits.exclude(exclude_query).filter(filter_query)
 
         #override fields if required - only used for internal calls from other apps
@@ -553,13 +557,13 @@ class ItemUpdate(generics.UpdateAPIView):
             if self.ordered(current) != self.ordered(new):
                 data['last_modified_time'] = datetime.datetime.now()
                 try:
-                    data['last_modified_by'] = request.user.profile.initials
+                    data['last_modified_by'] = request.user.profile.display_name
                 except:
                     data['last_modified_by'] = request.user.username
         else:
             data['last_modified_time'] = datetime.datetime.now()
             try:
-                data['last_modified_by'] = request.user.profile.initials
+                data['last_modified_by'] = request.user.profile.display_name
             except:
                 data['last_modified_by'] = request.user.username
         serializer = self.get_serializer(instance, data=data, partial=partial)

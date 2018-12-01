@@ -15,7 +15,7 @@ var api = (function (){
   //temporary promise public functions will replace non-promise versions eventually
   var createItemInDatabasePromise, updateItemInDatabasePromise, updateFieldsInDatabasePromise,
   getItemFromDatabasePromise, getItemsFromDatabasePromise, deleteItemFromDatabasePromise,
-  deleteM2MItemFromDatabasePromise;
+  deleteM2MItemFromDatabasePromise, getCurrentUserPromise;
 
   csrfSafeMethod = function (method) {
     // these HTTP methods do not require CSRF protection
@@ -72,7 +72,7 @@ var api = (function (){
     });
   };
 
-  //TODO: write promise equivalent
+
   getCurrentUser = function (success_callback, error_callback) {
     $.ajax({'url': '/api/whoami',
         'method': 'GET'}
@@ -86,6 +86,18 @@ var api = (function (){
       }
     });
     return;
+  };
+
+  getCurrentUserPromise = function () {
+    return new Promise(function (resolve, reject) {
+      $.ajax({'url': '/api/whoami',
+          'method': 'GET'}
+      ).then(function(response) {
+        resolve(response);
+      }).catch(function(response){
+        reject(response);
+      })
+    });
   };
 
   getItemFromDatabase = function (app, model, id, success_callback, error_callback) {
@@ -354,6 +366,7 @@ var api = (function (){
       getItemsFromDatabasePromise: getItemsFromDatabasePromise,
       deleteItemFromDatabasePromise: deleteItemFromDatabasePromise,
       deleteM2MItemFromDatabasePromise: deleteM2MItemFromDatabasePromise,
+      getCurrentUserPromise: getCurrentUserPromise,
       getCurrentUser: getCurrentUser
     }
   } else {
@@ -373,6 +386,7 @@ var api = (function (){
       getItemsFromDatabasePromise: getItemsFromDatabasePromise,
       deleteItemFromDatabasePromise: deleteItemFromDatabasePromise,
       deleteM2MItemFromDatabasePromise: deleteM2MItemFromDatabasePromise,
+      getCurrentUserPromise: getCurrentUserPromise,
       getCurrentUser: getCurrentUser,
       getCSRFToken: getCSRFToken
 
