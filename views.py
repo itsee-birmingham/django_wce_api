@@ -220,8 +220,6 @@ class ItemList(generics.ListAPIView):
         if 'supplied_filter' in self.kwargs and self.kwargs['supplied_filter'] is not None:
             hits = hits.filter(self.kwargs['supplied_filter'])
         requestQuery = dict(self.request.GET)
-        print(self.request.GET.getlist('work__author__abbreviation'))
-        print('*****')
         filter_query = getFieldFilters(requestQuery, target, 'filter')
         exclude_query = getFieldFilters(requestQuery, target, 'exclude')
         hits = hits.exclude(exclude_query).filter(filter_query)
@@ -439,7 +437,7 @@ class ItemDetail(generics.RetrieveAPIView):
         item = self.get_queryset().get(pk=kwargs['pk'])
         if 'format' in kwargs and kwargs['format'] == 'json':
             serializer = self.get_serializer_class()
-            json = JSONRenderer().render(serializer(item).data)
+            json = JSONRenderer().render(serializer(item).data).decode('utf-8')
             return json
         elif 'format' in kwargs and kwargs['format'] == 'html':
             return item
@@ -493,7 +491,7 @@ class PrivateItemDetail(generics.RetrieveAPIView):
         item = self.get_queryset().get(pk=kwargs['pk'])
         if 'format' in kwargs and kwargs['format'] == 'json':
             serializer = self.get_serializer_class()
-            json = JSONRenderer().render(serializer(item).data)
+            json = JSONRenderer().render(serializer(item).data).decode('utf-8')
             return json
         elif 'format' in kwargs and kwargs['format'] == 'html':
             return item
@@ -556,16 +554,17 @@ class ItemUpdate(generics.UpdateAPIView):
             current = jsontools.dumps(json, sort_keys=True)
             if self.ordered(current) != self.ordered(new):
                 data['last_modified_time'] = datetime.datetime.now()
-                try:
+                if request.user.profile.display_name != '':
                     data['last_modified_by'] = request.user.profile.display_name
-                except:
+                else:
                     data['last_modified_by'] = request.user.username
         else:
             data['last_modified_time'] = datetime.datetime.now()
-            try:
+            if request.user.profile.display_name != '':
                 data['last_modified_by'] = request.user.profile.display_name
-            except:
+            else:
                 data['last_modified_by'] = request.user.username
+
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
@@ -619,7 +618,7 @@ class ItemCreate(generics.CreateAPIView):
         data = request.data
         data['created_time'] = datetime.datetime.now()
         try:
-            data['created_by'] = request.user.profile.initials
+            data['created_by'] = request.user.profile.display_name
         except:
             data['created_by'] = request.user.username
         serializer = self.get_serializer(data=data)
@@ -674,7 +673,7 @@ class M2MItemDelete(generics.UpdateAPIView):
         getattr(instance, self.kwargs['fieldname']).remove(author)
         instance.last_modified_time = datetime.datetime.now()
         try:
-            instance.last_modified_by = request.user.profile.initials
+            instance.last_modified_by = request.user.profile.display_name
         except:
             instance.last_modified_by = request.user.username
         instance.save()
