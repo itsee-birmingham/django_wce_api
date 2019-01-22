@@ -6,7 +6,7 @@ var api = (function (){
   var csrfSafeMethod, getEtag, setEtag, getCSRFToken;
 
   //Private variables
-  const etags = {};
+  //const etags = {};
 
   //Public functions
   var setupAjax, createItemInDatabase, updateItemInDatabase, updateFieldsInDatabase,
@@ -23,6 +23,12 @@ var api = (function (){
   };
 
   getEtag = function (app, model, id) {
+    var etags;
+    if (window.sessionStorage.etags) {
+      etags = JSON.parse(window.sessionStorage.etags);
+    } else {
+      etags = {};
+    }
     if (etags.hasOwnProperty(app)
           && etags[app].hasOwnProperty(model)
           && etags[app][model].hasOwnProperty(id)) {
@@ -34,6 +40,12 @@ var api = (function (){
   //TODO: think about whether we ever need to clear an etag and if we should also be
   //refusing to save * (these two issues might be related)
   setEtag = function (app, model, id, etag) {
+    var etags;
+    if (window.sessionStorage.etags) {
+      etags = JSON.parse(window.sessionStorage.etags);
+    } else {
+      etags = {};
+    }
     if (etag !== null && etag !== undefined) {
       if (!etags.hasOwnProperty(app)) {
         etags[app] = {};
@@ -41,8 +53,9 @@ var api = (function (){
       if (!etags[app].hasOwnProperty(model)) {
         etags[app][model] = {};
       }
-      etags[app][model][id] = etag;
+      etags[app][model][id] = '"' + etag + '"';
     }
+    window.sessionStorage.etags = JSON.stringify(etags);
   };
 
   getCSRFToken = function () {
@@ -210,12 +223,14 @@ var api = (function (){
     //TODO: see if we need to delete the csrfmiddleware token - I'm not sure it is there
     //it might be in the form but it might not be needed
     delete data['csrfmiddlewaretoken'];
+    var etag = getEtag(app, model, data.id);
     $.ajax({'url': '/api/' + app + '/' + model + '/update/' + data.id,
-        'headers': {'Content-Type': 'application/json'},
+        'headers': {'Content-Type': 'application/json', 'If-Match': etag},
         'dataType': 'json',
         'method': 'PUT',
         'data': JSON.stringify(data)}
-    ).done(function (response) {
+    ).done(function (response, textStatus, jqXHR) {
+      setEtag(app, model, response.id, jqXHR.getResponseHeader('etag'));
       if (typeof success_callback !== 'undefined') {
         success_callback(response);
       }
@@ -232,12 +247,14 @@ var api = (function (){
     //it might be in the form but it might not be needed
     delete data['csrfmiddlewaretoken'];
     return new Promise(function (resolve, reject) {
+      var etag = getEtag(app, model, data.id);
       $.ajax({'url': '/api/' + app + '/' + model + '/update/' + data.id,
-          'headers': {'Content-Type': 'application/json'},
+          'headers': {'Content-Type': 'application/json', 'If-Match': etag},
           'dataType': 'json',
           'method': 'PUT',
           'data': JSON.stringify(data)}
-      ).then(function (response) {
+      ).then(function (response, textStatus, jqXHR) {
+        setEtag(app, model, response.id, jqXHR.getResponseHeader('etag'));
         resolve(response);
       }).catch(function (response) {
         reject(response);
@@ -254,7 +271,7 @@ var api = (function (){
         'method': 'PATCH',
         'data': JSON.stringify(data)}
     ).done(function (response, textStatus, jqXHR) {
-      setEtag(app, model, id, jqXHR.getResponseHeader('etag'));
+      setEtag(app, model, response.id, jqXHR.getResponseHeader('etag'));
       if (typeof success_callback !== 'undefined') {
         success_callback(response);
       }
@@ -275,7 +292,7 @@ var api = (function (){
           'method': 'PATCH',
           'data': JSON.stringify(data)}
       ).then(function (response, textStatus, jqXHR) {
-        setEtag(app, model, id, jqXHR.getResponseHeader('etag'));
+        setEtag(app, model, response.id, jqXHR.getResponseHeader('etag'));
         resolve(response);
       }).catch(function (response) {
         reject(response);

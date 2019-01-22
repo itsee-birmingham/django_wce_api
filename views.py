@@ -33,7 +33,8 @@ from django.http import JsonResponse
 
 def get_etag(request, app=None, model=None, pk=None):
     try:
-        return str(apps.get_model(app, model).objects.get(pk=pk).version_number)
+        etag = str(apps.get_model(app, model).objects.get(pk=pk).version_number)
+        return etag
     except AttributeError:
         return "*"
 
@@ -418,7 +419,7 @@ class ItemDetail(generics.RetrieveAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         try:
-            return Response(serializer.data, headers={'etag': '"%d"' % instance.version_number})
+            return Response(serializer.data, headers={'etag': '%d' % instance.version_number})
         except AttributeError:
             return Response(serializer.data)
 
@@ -577,7 +578,7 @@ class ItemUpdate(generics.UpdateAPIView):
 
         updated_instance = ItemDetail().get_item(request, **kwargs)
         try:
-            return Response(serializer.data, headers={'etag': '"%s"' % updated_instance['version_number']})
+            return Response(serializer.data, headers={'etag': '%s' % updated_instance['version_number']})
         except KeyError:
             return Response(serializer.data)
 
@@ -628,7 +629,7 @@ class ItemCreate(generics.CreateAPIView):
         created_instance = ItemDetail().get_item(request, pk=instance_id, **kwargs)
         headers = self.get_success_headers(serializer.data)
         try:
-            headers['etag'] = '"%s"' % created_instance['version_number']
+            headers['etag'] = '%s' % created_instance['version_number']
         except:
             pass
         return Response(created_instance, status=status.HTTP_201_CREATED, headers=headers)

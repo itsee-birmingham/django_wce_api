@@ -15,7 +15,7 @@ from unittest import skip
 
 class APIItemListTests(TestCase):
     base_url = '/api/{}/{}/'
-     
+
     def test_get_list_returns_json_200(self):
         a1_data = {'created_by': 'cat',
                    'created_time': timezone.now(),
@@ -27,8 +27,8 @@ class APIItemListTests(TestCase):
         response = self.client.get(self.base_url.format('citations', 'author'))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['content-type'], 'application/json')
-         
-    def test_get_list_returns_correct_data(self):       
+
+    def test_get_list_returns_correct_data(self):
         a1_data = {'created_by': 'cat',
                    'created_time': timezone.now(),
                    'abbreviation': 'TA1',
@@ -49,8 +49,8 @@ class APIItemListTests(TestCase):
         self.assertEqual(len(response_json['results']), 2)
         self.assertEqual(response_json['results'][0]['abbreviation'], 'TA1')
         self.assertEqual(response_json['results'][1]['abbreviation'], 'TA2')
-    
-    def test_get_list_returns_correct_data_with_sort(self):       
+
+    def test_get_list_returns_correct_data_with_sort(self):
         a1_data = {'created_by': 'cat',
                    'created_time': timezone.now(),
                    'abbreviation': 'TA1',
@@ -71,8 +71,8 @@ class APIItemListTests(TestCase):
         self.assertEqual(len(response_json['results']), 2)
         self.assertEqual(response_json['results'][0]['abbreviation'], 'TA2')
         self.assertEqual(response_json['results'][1]['abbreviation'], 'TA1')
-    
-    def test_get_list_returns_correct_data_with_field_filtering(self):       
+
+    def test_get_list_returns_correct_data_with_field_filtering(self):
         a1_data = {'created_by': 'cat',
                    'created_time': timezone.now(),
                    'abbreviation': 'TA1',
@@ -96,7 +96,7 @@ class APIItemListTests(TestCase):
         self.assertNotIn('full_name', response_json['results'][0])
         self.assertNotIn('language', response_json['results'][0])
 
-    def test_get_list_returns_correct_data_with_pagination(self):       
+    def test_get_list_returns_correct_data_with_pagination(self):
         a1_data = {'created_by': 'cat',
                    'created_time': timezone.now(),
                    'abbreviation': 'TA1',
@@ -115,10 +115,10 @@ class APIItemListTests(TestCase):
         response_json = json.loads(response.content.decode('utf8'))
         self.assertEqual(response_json['count'], 2)
         self.assertEqual(len(response_json['results']), 1)
-               
+
 class APIItemDetailTests(TestCase):
     base_url = '/api/{}/{}/{}'
-     
+
     def test_get_list_returns_json_200(self):
         a1_data = {'created_by': 'cat',
                    'created_time': timezone.now(),
@@ -130,7 +130,7 @@ class APIItemDetailTests(TestCase):
         response = self.client.get(self.base_url.format('citations', 'author', a1.id))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['content-type'], 'application/json')
-        
+
     def test_get_list_returns_correct_data(self):
         a1_data = {'created_by': 'cat',
                    'created_time': timezone.now(),
@@ -149,12 +149,12 @@ class APIPostTests(APITestCase):
     def addCitationManagerUser(self, credentials):
         g2 = Group(name='citation_managers')
         g2.save()
-        self.add_citation_manager_permissions(g2)        
-        user = User.objects.create_user(**credentials)      
+        self.add_citation_manager_permissions(g2)
+        user = User.objects.create_user(**credentials)
         user.groups.add(g2)
         user.save()
         return user
-    
+
     def add_citation_manager_permissions(self, group):
         group.permissions.add(Permission.objects.get(codename='add_citation'))
         group.permissions.add(Permission.objects.get(codename='change_citation'))
@@ -175,9 +175,9 @@ class APIPostTests(APITestCase):
         permission = Permission.objects.get(content_type=content_type, codename='change_work')
         group.permissions.add(permission)
         group.save()
-    
+
     base_url = '/api/{}/{}/'
-    
+
     #@skip('')
     def test_POSTAuthor(self):
         authors = models.Author.objects.all()
@@ -192,14 +192,14 @@ class APIPostTests(APITestCase):
         response = self.client.post('%screate' % self.base_url.format('citations', 'author'), a1_data)
         #we should not be able to create unless we are logged in - 403 Authentication credentials were not provided.
         self.assertEqual(response.status_code, 403)
-        
+
         #now login
         user = self.addCitationManagerUser({'username': 'testuser', 'password': 'xyz'})
         self.assertTrue(user.has_perm('citations.add_author'))
         client = APIClient()
         login = client.login(username='testuser', password='xyz')
         self.assertEqual(login, True)
-        
+
         response = client.post('%screate' % self.base_url.format('citations', 'author'), json.dumps(a1_data), content_type='application/json')
         self.assertEqual(response.status_code, 201)
         authors = models.Author.objects.all()
@@ -227,14 +227,14 @@ class APIPostTests(APITestCase):
         client = APIClient()
         login = client.login(username='testuser', password='xyz')
         self.assertEqual(login, True)
-        
+
         response = client.patch('%supdate/%s' % (self.base_url.format('citations', 'author'), a1.id), json.dumps({'full_name': 'My new name'}), content_type='application/json')
         self.assertEqual(response.status_code, 200)
         authors = models.Author.objects.all()
         self.assertTrue(len(authors) == 1)
         self.assertEqual(authors[0].full_name, 'My new name')
         self.assertEqual(authors[0].last_modified_by, 'testuser')
-    
+
     def test_PUTAuthorNoChange(self):
         #make an author to modify
         a1_data = {"created_time": str(timezone.now()),
@@ -266,7 +266,7 @@ class APIPostTests(APITestCase):
         #we need to get the stored version because otherwise the creation time strings are different!
         response = self.client.get(self.base_url.format('citations', 'author', a1.id))
         response_json = json.loads(response.content.decode('utf8'))
-        
+
         user = self.addCitationManagerUser({'username': 'testuser', 'password': 'xyz'})
         self.assertTrue(user.has_perm('citations.add_author'))
         client = APIClient()
@@ -280,8 +280,8 @@ class APIPostTests(APITestCase):
         self.assertTrue(len(authors) == 1)
         self.assertEqual(authors[0].full_name, 'Test Author 1')
         self.assertEqual(authors[0].last_modified_by, '')
-        
-    
+
+
     #@skip('')
     def test_PUTAuthorChange(self):
         #make an author to modify
@@ -315,7 +315,7 @@ class APIPostTests(APITestCase):
         response = self.client.get(self.base_url.format('citations', 'author', a1.id))
         response_json = json.loads(response.content.decode('utf8'))
         response_json['results'][0]['full_name'] = 'My new name'
-        
+
         user = self.addCitationManagerUser({'username': 'testuser', 'password': 'xyz'})
         self.assertTrue(user.has_perm('citations.add_author'))
         client = APIClient()
