@@ -27,6 +27,7 @@ from django.contrib.auth.models import User
 from accounts.serializers import ProfileSerializer
 from rest_framework.decorators import api_view
 from django.http import JsonResponse
+from api.decorators import object_is_public_or_user_is_owner_or_superuser
 
 
 
@@ -186,7 +187,7 @@ I have tried to specify things in the model itself and then call them from here
 
 """
 
-
+@method_decorator(object_is_public_or_user_is_owner_or_superuser, name='dispatch')
 class ItemList(generics.ListAPIView):
 
     permission_classes = (permissions.AllowAny, )#IsAuthenticated,)#)#.#AllowAny, ) #DjangoModelPermissionsOrAnonReadOnly
@@ -237,7 +238,7 @@ class ItemList(generics.ListAPIView):
         return hits
 
 
-    def get(self, request, app, model):
+    def get(self, request, app, model, supplied_filter=None):
         return self.list(request)
 
     def get_offset_required(self, queryset, item_id):
@@ -383,7 +384,7 @@ class PrivateItemList(generics.ListAPIView):
         return resp.data
 
 
-
+@method_decorator(object_is_public_or_user_is_owner_or_superuser, name='dispatch')
 class ItemDetail(generics.RetrieveAPIView):
 
     permission_classes = (permissions.AllowAny, )
@@ -424,7 +425,7 @@ class ItemDetail(generics.RetrieveAPIView):
             return Response(serializer.data)
 
     #this one is used by the regular api calls
-    def get(self, request, app, model, pk):
+    def get(self, request, app, model, pk, supplied_filter=None):
         return self.retrieve(request)
 
 #If you do also need post here then this will work - it is disabled now until we need it
