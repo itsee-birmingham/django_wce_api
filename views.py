@@ -27,7 +27,7 @@ from django.contrib.auth.models import User
 from accounts.serializers import ProfileSerializer
 from rest_framework.decorators import api_view
 from django.http import JsonResponse
-from api.decorators import object_is_public_or_user_is_owner_or_superuser
+from api.decorators import apply_model_get_restrictions
 
 
 
@@ -187,7 +187,7 @@ I have tried to specify things in the model itself and then call them from here
 
 """
 
-@method_decorator(object_is_public_or_user_is_owner_or_superuser, name='dispatch')
+@method_decorator(apply_model_get_restrictions, name='dispatch')
 class ItemList(generics.ListAPIView):
 
     permission_classes = (permissions.AllowAny, )#IsAuthenticated,)#)#.#AllowAny, ) #DjangoModelPermissionsOrAnonReadOnly
@@ -384,7 +384,7 @@ class PrivateItemList(generics.ListAPIView):
         return resp.data
 
 
-@method_decorator(object_is_public_or_user_is_owner_or_superuser, name='dispatch')
+@method_decorator(apply_model_get_restrictions, name='dispatch')
 class ItemDetail(generics.RetrieveAPIView):
 
     permission_classes = (permissions.AllowAny, )
