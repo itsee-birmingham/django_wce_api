@@ -1,6 +1,7 @@
 from django.http import Http404
 from django.apps import apps
-from django.contrib.auth.models import User
+from accounts.models import User
+from accounts.serializers import UserSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -23,8 +24,6 @@ import json as jsontools
 import copy
 from django.views.decorators.http import etag
 from django.utils.decorators import method_decorator
-from django.contrib.auth.models import User
-from accounts.serializers import ProfileSerializer
 from rest_framework.decorators import api_view
 from django.http import JsonResponse
 from api.decorators import apply_model_get_restrictions
@@ -175,7 +174,7 @@ class SelectPagePaginator(LimitOffsetPagination):
 
 
 def getUser(request):
-    serializer = ProfileSerializer(request.user.profile)
+    serializer = UserSerializer(request.user)
     return JsonResponse(serializer.data)
 
 
@@ -556,14 +555,14 @@ class ItemUpdate(generics.UpdateAPIView):
             current = jsontools.dumps(json, sort_keys=True)
             if self.ordered(current) != self.ordered(new):
                 data['last_modified_time'] = datetime.datetime.now()
-                if request.user.profile.display_name != '':
-                    data['last_modified_by'] = request.user.profile.display_name
+                if request.user.display_name != '':
+                    data['last_modified_by'] = request.user.display_name
                 else:
                     data['last_modified_by'] = request.user.username
         else:
             data['last_modified_time'] = datetime.datetime.now()
-            if request.user.profile.display_name != '':
-                data['last_modified_by'] = request.user.profile.display_name
+            if request.user.display_name != '':
+                data['last_modified_by'] = request.user.display_name
             else:
                 data['last_modified_by'] = request.user.username
 
@@ -619,9 +618,9 @@ class ItemCreate(generics.CreateAPIView):
         self.kwargs = kwargs
         data = request.data
         data['created_time'] = datetime.datetime.now()
-        try:
-            data['created_by'] = request.user.profile.display_name
-        except:
+        if request.user.display_name != '':
+            data['created_by'] = request.user.display_name
+        else:
             data['created_by'] = request.user.username
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
@@ -674,9 +673,9 @@ class M2MItemDelete(generics.UpdateAPIView):
         author = apps.get_model(self.kwargs['app'], self.kwargs['itemmodel']).objects.get(pk=self.kwargs['itempk'])
         getattr(instance, self.kwargs['fieldname']).remove(author)
         instance.last_modified_time = datetime.datetime.now()
-        try:
-            instance.last_modified_by = request.user.profile.display_name
-        except:
+        if request.user.display_name != '':
+            instance.last_modified_by = request.user.display_name
+        else:
             instance.last_modified_by = request.user.username
         instance.save()
         return Response(status=status.HTTP_204_NO_CONTENT)

@@ -5,7 +5,7 @@ from django.apps import apps
 from transcriptions import models as transcription_models
 from collation import models as collation_models
 from citations import models as citation_models
-from django.contrib.auth.models import User
+from accounts.models import User
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
@@ -24,7 +24,7 @@ class MyAPITestCase(TestCase):
             del credentials['display_name']
             user = User.objects.create_user(**credentials)
             user.save()
-            user.profile.display_name = display_name
+            user.display_name = display_name
             user.save()
         else:
             user = User.objects.create_user(**credentials)
@@ -40,7 +40,7 @@ class MyAPITestCase(TestCase):
             user = User.objects.create_user(**credentials)
             user.groups.add(g1)
             user.save()
-            user.profile.display_name = display_name
+            user.display_name = display_name
             user.save()
         else:
             user = User.objects.create_user(**credentials)

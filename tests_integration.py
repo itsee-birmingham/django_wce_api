@@ -2,7 +2,7 @@ import json
 from django.utils import timezone
 from django.test import TestCase
 from citations import models
-from django.contrib.auth.models import User
+from accounts.models import User
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
