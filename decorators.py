@@ -36,8 +36,8 @@ def apply_model_get_restrictions(function):
             #this is for mixed tables like transcriptions and verses
             #All hybrid public models need a 'public' entry in the schema
             #return server error if not
-            if not 'public' in target.get_fields() or not 'project' in target.get_fields():
-                return JsonResponse({'message': "Internal server error - model configuation incompatible with API"}, status=500)
+            if not 'public' in target.get_fields() or not 'project__id' in request.GET:
+                return JsonResponse({'message': "Internal server error - model configuation incompatible with API (code 10002)"}, status=500)
 
 
             if not request.user.is_authenticated: #we are not logged in
@@ -79,7 +79,7 @@ def apply_model_get_restrictions(function):
 
             if not 'project' in target.get_fields():
 
-                return JsonResponse({'message': "Internal server error - model configuation incompatible with API"}, status=500)
+                return JsonResponse({'message': "Internal server error - model configuation incompatible with API (code 10003)"}, status=500)
 
             #a project must be specified in any request to a model of this type
             if not 'project__id' in request.GET:
@@ -105,7 +105,7 @@ def apply_model_get_restrictions(function):
             #All hybrid public models need a 'public' entry in the schema
             #return server error if not
             if not 'public' in target.get_fields():
-                return JsonResponse({'message': "Internal server error - model configuation incompatible with API"}, status=500)
+                return JsonResponse({'message': "Internal server error - model configuation incompatible with API (code 10004)"}, status=500)
 
 
             if not request.user.is_authenticated: #we are not logged in
