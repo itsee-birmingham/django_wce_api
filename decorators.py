@@ -31,6 +31,12 @@ def apply_model_get_restrictions(function):
             #open means anyone can read everything - citations data for example
             return function(request, *args, **kwargs)
 
+        elif availability == 'logged_in':
+            #anyone logged in can see it
+            if request.user.is_authenticated:
+                return function(request, *args, **kwargs)
+            return JsonResponse({'message': "Authentication required"}, status=401)
+
         elif availability == 'public_or_project':
             #anyone can see it if it has a public flag set to True if not then only a member of the project or a superuser
             #this is for mixed tables like transcriptions and verses
@@ -39,15 +45,12 @@ def apply_model_get_restrictions(function):
             if not 'public' in target.get_fields() or not 'project__id' in request.GET:
                 return JsonResponse({'message': "Internal server error - model configuation incompatible with API (code 10002)"}, status=500)
 
-
             if not request.user.is_authenticated: #we are not logged in
                 #then you only get the public ones
                 #assumes a public boolean attribute on the model (which is okay because we have checked above)
                 query = Q(('public', True))
                 kwargs['supplied_filter'] = query
                 return function(request, *args, **kwargs)
-
-
 
             if request.user.groups.filter(name='%s_superuser' % kwargs['app']).count() > 0:
                 return function(request, *args, **kwargs)
