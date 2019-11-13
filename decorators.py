@@ -31,14 +31,19 @@ def apply_model_get_restrictions(function):
             #open means anyone can read everything - citations data for example
             return function(request, *args, **kwargs)
 
+        elif availability == 'logged_in':
+            #anyone logged in can see it
+            if request.user.is_authenticated:
+                return function(request, *args, **kwargs)
+            return JsonResponse({'message': "Authentication required"}, status=401)
+
         elif availability == 'public_or_project':
             #anyone can see it if it has a public flag set to True if not then only a member of the project or a superuser
             #this is for mixed tables like transcriptions and verses
             #All hybrid public models need a 'public' entry in the schema
             #return server error if not
-            if not 'public' in target.get_fields() or not 'project' in target.get_fields():
-                return JsonResponse({'message': "Internal server error - model configuation incompatible with API"}, status=500)
-
+            if not 'public' in target.get_fields() or not 'project__id' in request.GET:
+                return JsonResponse({'message': "Internal server error - model configuation incompatible with API (code 10002)"}, status=500)
 
             if not request.user.is_authenticated: #we are not logged in
                 #then you only get the public ones
@@ -46,8 +51,6 @@ def apply_model_get_restrictions(function):
                 query = Q(('public', True))
                 kwargs['supplied_filter'] = query
                 return function(request, *args, **kwargs)
-
-
 
             if request.user.groups.filter(name='%s_superuser' % kwargs['app']).count() > 0:
                 return function(request, *args, **kwargs)
@@ -79,7 +82,7 @@ def apply_model_get_restrictions(function):
 
             if not 'project' in target.get_fields():
 
-                return JsonResponse({'message': "Internal server error - model configuation incompatible with API"}, status=500)
+                return JsonResponse({'message': "Internal server error - model configuation incompatible with API (code 10003)"}, status=500)
 
             #a project must be specified in any request to a model of this type
             if not 'project__id' in request.GET and not 'project' in request.GET:
@@ -105,7 +108,7 @@ def apply_model_get_restrictions(function):
             #All hybrid public models need a 'public' entry in the schema
             #return server error if not
             if not 'public' in target.get_fields():
-                return JsonResponse({'message': "Internal server error - model configuation incompatible with API"}, status=500)
+                return JsonResponse({'message': "Internal server error - model configuation incompatible with API (code 10004)"}, status=500)
 
 
             if not request.user.is_authenticated: #we are not logged in

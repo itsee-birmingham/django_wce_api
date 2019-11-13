@@ -62,7 +62,12 @@ def getQueryTuple(field_type, field, value):
                        'ArrayField': [['^(.+)$', '__contains']],
                        'NullBooleanField': [['^([tT]rue)$', '', True], ['^([fF]alse)$', '', None]],
                        'BooleanField': [['^([tT]rue)$', '', True], ['^([fF]alse)$', '', False]],
-                       'JSONField': [],
+                       # this assumes that the search is for the value in the JSON field and that that values is text or char
+                       # there are more searches specific to JSON fields such as presence of key which we do not support yet
+                       'JSONField': [['^([^*|]+)\*$', '__startswith'], ['^([^*|]+)\*\|i$', '__istartswith'],
+                                     ['^\*([^*|]+)$', '__endswith'], ['^\*([^*|]+)\|i$', '__iendswith'],
+                                     ['^\*([^*|]+)\*$', '__contains'], ['^\*([^*|]+)\*\|i$', '__icontains'],
+                                     ['^([^*|]+)\|i$', '__iexact']],
                        'ForeignKey': [],
                        'ManyToManyField': []
                        }
