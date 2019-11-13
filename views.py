@@ -576,11 +576,15 @@ class ItemUpdate(generics.UpdateAPIView):
             instance = self.get_object()
             serializer = self.get_serializer(instance)
 
+        #return the full updated object
         updated_instance = ItemDetail().get_item(request, **kwargs)
+
         try:
-            return Response(serializer.data, headers={'etag': '%s' % updated_instance['version_number']})
+            # return Response(serializer(updated_instance).data, headers={'etag': '%s' % updated_instance['version_number']})
+            return Response(updated_instance, headers={'etag': '%s' % updated_instance['version_number']})
         except KeyError:
-            return Response(serializer.data)
+            # return Response(serializer(updated_instance).data)
+            return Response(updated_instance)
 
 
 

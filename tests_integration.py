@@ -82,7 +82,8 @@ class APIPostTests(APITestCase):
                    "created_time": str(timezone.now()),
                    "abbreviation": 'TA1',
                    "full_name": 'Test Author 1',
-                   "language": 'grc'
+                   "language": 'grc',
+                   "born": 365
                    }
         a1 = models.Author.objects.create(**a1_data)
 
@@ -99,10 +100,21 @@ class APIPostTests(APITestCase):
 
         response = client.patch('%supdate/%s' % (self.base_url.format('citations', 'author'), a1.id), json.dumps({'full_name': 'My new name'}), content_type='application/json')
         self.assertEqual(response.status_code, 200)
+        response_json = response.json()
+
+        # make sure we are getting the full object back not just the changed fields
+        self.assertTrue('born' in response_json)
+        self.assertEqual(response_json['born'], 365)
+        self.assertTrue('died' in response_json)
+        self.assertEqual(response_json['died'], None)
+
+        # make sure the changes were applied
         authors = models.Author.objects.all()
         self.assertTrue(len(authors) == 1)
         self.assertEqual(authors[0].full_name, 'My new name')
         self.assertEqual(authors[0].last_modified_by, 'testuser')
+
+
 
     def test_PUTAuthorNoChange(self):
         #make an author to modify
