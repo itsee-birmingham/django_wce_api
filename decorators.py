@@ -52,7 +52,7 @@ def apply_model_get_restrictions(function):
             if request.user.groups.filter(name='%s_superuser' % kwargs['app']).count() > 0:
                 return function(request, *args, **kwargs)
 
-            if not 'project__id' in request.GET:
+            if not 'project__id' in request.GET and not 'project' in request.GET:
                 #if no project specified you can only have the public ones
                 query = Q(('public', True))
                 kwargs['supplied_filter'] = query
@@ -82,7 +82,7 @@ def apply_model_get_restrictions(function):
                 return JsonResponse({'message': "Internal server error - model configuation incompatible with API"}, status=500)
 
             #a project must be specified in any request to a model of this type
-            if not 'project__id' in request.GET:
+            if not 'project__id' in request.GET and not 'project' in request.GET:
                 return JsonResponse({'message': "Query not complete - Project must be specified"}, status=400)
 
             if request.user.groups.filter(name='%s_superuser' % kwargs['app']).count() > 0:

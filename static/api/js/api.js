@@ -113,6 +113,7 @@ var api = (function (){
     });
   };
 
+  //TODO: This needs updating with project option like the promise version but not sure what will break!
   getItemFromDatabase = function (app, model, id, success_callback, error_callback) {
     $.ajax({'url': '/api/' + app + '/' + model + '/' + id,
         'method': 'GET'}
@@ -129,9 +130,13 @@ var api = (function (){
     return;
   };
 
-  getItemFromDatabasePromise = function (app, model, id) {
+  getItemFromDatabasePromise = function (app, model, id, project) {
     return new Promise(function (resolve, reject) {
-      $.ajax({'url': '/api/' + app + '/' + model + '/' + id,
+      var url = '/api/' + app + '/' + model + '/' + id;
+      if (project !== undefined) {
+        url += '?project__id=' + project;
+      }
+      $.ajax({'url': url,
           'method': 'GET'}
       ).then(function(response, textStatus, jqXHR) {
         setEtag(app, model, id, jqXHR.getResponseHeader('etag'));
