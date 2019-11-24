@@ -1,18 +1,19 @@
-"use strict";
+/*jshint esversion: 6 */
 var testing;
 var api = (function (){
+  "use strict";
 
-  //Private functions
+  // Private functions
   var csrfSafeMethod, getEtag, setEtag, getCSRFToken;
 
-  //Private variables
-  //const etags = {};
+  // Private variables
+  // const etags = {};
 
-  //Public functions
+  // Public functions
   var setupAjax, createItemInDatabase, updateItemInDatabase, updateFieldsInDatabase,
   getItemFromDatabase, getItemsFromDatabase, deleteItemFromDatabase, deleteM2MItemFromDatabase,
   getCurrentUser;
-  //temporary promise public functions will replace non-promise versions eventually
+  // temporary promise public functions will replace non-promise versions eventually
   var createItemInDatabasePromise, updateItemInDatabasePromise, updateFieldsInDatabasePromise,
   getItemFromDatabasePromise, getItemsFromDatabasePromise, deleteItemFromDatabasePromise,
   deleteM2MItemFromDatabasePromise, getCurrentUserPromise;
@@ -29,16 +30,16 @@ var api = (function (){
     } else {
       etags = {};
     }
-    if (etags.hasOwnProperty(app)
-          && etags[app].hasOwnProperty(model)
-          && etags[app][model].hasOwnProperty(id)) {
+    if (etags.hasOwnProperty(app) &&
+            etags[app].hasOwnProperty(model) &&
+            etags[app][model].hasOwnProperty(id)) {
       return etags[app][model][id];
     }
     return '*';
   };
 
-  //TODO: think about whether we ever need to clear an etag and if we should also be
-  //refusing to save * (these two issues might be related)
+  // TODO: think about whether we ever need to clear an etag and if we should also be
+  // refusing to save * (these two issues might be related)
   setEtag = function (app, model, id, etag) {
     var etags;
     if (window.sessionStorage.etags) {
@@ -109,7 +110,7 @@ var api = (function (){
         resolve(response);
       }).catch(function(response){
         reject(response);
-      })
+      });
     });
   };
 
@@ -147,9 +148,9 @@ var api = (function (){
     });
   };
 
-  //TODO: consider whether this should also set etag for all items returned
-  //TODO: if no value is given for a search field then everything is returned (limited by any additional search fields)
-  //if we are looking for a list of ids and there are none then this gets an empty id value and ideally it would return nothing.
+  // TODO: consider whether this should also set etag for all items returned
+  // TODO: if no value is given for a search field then everything is returned (limited by any additional search fields)
+  // if we are looking for a list of ids and there are none then this gets an empty id value and ideally it would return nothing.
   getItemsFromDatabase = function (app, model, criteria, method, success_callback, error_callback) {
     $.ajax({'url': '/api/' + app + '/' + model,
         'method': method,
@@ -166,7 +167,7 @@ var api = (function (){
     return;
   };
 
-  //TODO: consider whether this should also set etag for all items returned
+  // TODO: consider whether this should also set etag for all items returned
   getItemsFromDatabasePromise = function (app, model, criteria, method) {
     if (typeof method === undefined) {
       method = 'GET';
@@ -184,7 +185,7 @@ var api = (function (){
   };
 
   createItemInDatabase = function (app, model, data, success_callback, error_callback) {
-    delete data['csrfmiddlewaretoken'];
+    delete data.csrfmiddlewaretoken;
     $.ajax({'url': '/api/' + app + '/' + model + '/create/',
         'headers': {'Content-Type': 'application/json'},
         'dataType': 'json',
@@ -197,16 +198,16 @@ var api = (function (){
       }
     }).fail(function (response) {
       if (typeof error_callback !== 'undefined') {
-        error_callback(response)
+        error_callback(response);
       }
     });
     return;
   };
 
   createItemInDatabasePromise = function (app, model, data) {
-    //TODO: see if we need to delete the csrfmiddleware token - I'm not sure it is there
-    //it might be in the form but it might not be needed
-    delete data['csrfmiddlewaretoken'];
+    // TODO: see if we need to delete the csrfmiddleware token - I'm not sure it is there
+    // it might be in the form but it might not be needed
+    delete data.csrfmiddlewaretoken;
     return new Promise(function (resolve, reject) {
       //TODO: this might need to return an etag - check rules
       $.ajax({'url': '/api/' + app + '/' + model + '/create/',
@@ -225,9 +226,9 @@ var api = (function (){
 
 
   updateItemInDatabase = function (app, model, data, success_callback, error_callback) {
-    //TODO: see if we need to delete the csrfmiddleware token - I'm not sure it is there
-    //it might be in the form but it might not be needed
-    delete data['csrfmiddlewaretoken'];
+    // TODO: see if we need to delete the csrfmiddleware token - I'm not sure it is there
+    // it might be in the form but it might not be needed
+    delete data.csrfmiddlewaretoken;
     var etag = getEtag(app, model, data.id);
     $.ajax({'url': '/api/' + app + '/' + model + '/update/' + data.id,
         'headers': {'Content-Type': 'application/json', 'If-Match': etag},
@@ -248,9 +249,9 @@ var api = (function (){
   };
 
   updateItemInDatabasePromise = function (app, model, data) {
-    //TODO: see if we need to delete the csrfmiddleware token - I'm not sure it is there
-    //it might be in the form but it might not be needed
-    delete data['csrfmiddlewaretoken'];
+    // TODO: see if we need to delete the csrfmiddleware token - I'm not sure it is there
+    // it might be in the form but it might not be needed
+    delete data.csrfmiddlewaretoken;
     return new Promise(function (resolve, reject) {
       var etag = getEtag(app, model, data.id);
       $.ajax({'url': '/api/' + app + '/' + model + '/update/' + data.id,
@@ -282,7 +283,7 @@ var api = (function (){
       }
     }).fail(function (response) {
       if (typeof error_callback !== 'undefined') {
-        error_callback(response)
+        error_callback(response);
       }
     });
     return;
@@ -345,7 +346,7 @@ var api = (function (){
           }
       }).fail(function (response) {
           if (typeof error_callback !== 'undefined') {
-              error_callback(response)
+              error_callback(response);
           }
       });
       return;
@@ -368,11 +369,11 @@ var api = (function (){
 
   if (testing) {
     return {
-      //private
+      // private
       csrfSafeMethod: csrfSafeMethod,
       getEtag: getEtag,
       setEtag: setEtag,
-      //public
+      // public
       setupAjax: setupAjax,
       createItemInDatabase: createItemInDatabase,
       updateItemInDatabase: updateItemInDatabase,
@@ -390,7 +391,7 @@ var api = (function (){
       deleteM2MItemFromDatabasePromise: deleteM2MItemFromDatabasePromise,
       getCurrentUserPromise: getCurrentUserPromise,
       getCurrentUser: getCurrentUser
-    }
+    };
   } else {
     return {
       setupAjax: setupAjax,
@@ -411,8 +412,7 @@ var api = (function (){
       getCurrentUserPromise: getCurrentUserPromise,
       getCurrentUser: getCurrentUser,
       getCSRFToken: getCSRFToken
-
-    }
+    };
   }
 
 

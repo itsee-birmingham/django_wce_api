@@ -9,7 +9,7 @@ from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.test import Client
 from rest_framework.test import APIClient
-#from rest_framework.test import APITestCase
+# from rest_framework.test import APITestCase
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIRequestFactory
 from unittest import skip
@@ -50,26 +50,25 @@ class MyAPITestCase(TestCase):
     def add_transcription_data(self):
 
         collection_data = {'identifier': 'NT',
-                            'name': 'The New Testament',
-                            'abbreviation': 'NT'
-                            }
+                           'name': 'The New Testament',
+                           'abbreviation': 'NT'
+                           }
         self.collection = transcription_models.Collection.objects.create(**collection_data)
 
         work3_data = {'identifier': 'NT_Luke',
-                    'name': 'Luke',
-                    'collection': self.collection,
-                    'sort_value': 3,
-                    'abbreviation': 'Luke'
-                    }
+                      'name': 'Luke',
+                      'collection': self.collection,
+                      'sort_value': 3,
+                      'abbreviation': 'Luke'
+                      }
         self.work3 = transcription_models.Work.objects.create(**work3_data)
 
-
         work4_data = {'identifier': 'NT_John',
-                    'name': 'John',
-                    'collection': self.collection,
-                    'sort_value': 4,
-                    'abbreviation': 'John'
-                    }
+                      'name': 'John',
+                      'collection': self.collection,
+                      'sort_value': 4,
+                      'abbreviation': 'John'
+                      }
         self.work4 = transcription_models.Work.objects.create(**work4_data)
 
         corpus_data = {'identifier': 'NT_GRC',
@@ -88,94 +87,94 @@ class MyAPITestCase(TestCase):
         self.structure = transcription_models.Structure.objects.create(**structure_data)
 
         t1_data = {'identifier': 'NT_GRC_01_John',
-                    'corpus': self.corpus,
-                    'document_id': '20001',
-                    'tei':' <TEI/>',
-                    'source': 'upload',
-                    'siglum': '01',
-                    'document_type': 'majuscule',
-                    'language': 'grc',
-                    #'corrector_order': ,
-                    'total_verses': 7,
-                    'total_unique_verses': 6,
-                    #'user': ,
-                    'work': self.work4,
-                    'public': True
-                    }
+                   'corpus': self.corpus,
+                   'document_id': '20001',
+                   'tei': '<TEI/>',
+                   'source': 'upload',
+                   'siglum': '01',
+                   'document_type': 'majuscule',
+                   'language': 'grc',
+                   # 'corrector_order': ,
+                   'total_verses': 7,
+                   'total_unique_verses': 6,
+                   # 'user': ,
+                   'work': self.work4,
+                   'public': True
+                   }
         self.t1 = transcription_models.Transcription.objects.create(**t1_data)
 
         t2_data = {'identifier': 'NT_GRC_02_John',
-                    'corpus': self.corpus,
-                    'document_id': '20002',
-                    'tei':' <TEI/>',
-                    'source': 'upload',
-                    'siglum': '02',
-                    'document_type': 'majuscule',
-                    'language': 'grc',
-                    #'corrector_order': ,
-                    'total_verses': 5,
-                    'total_unique_verses': 5,
-                    #'user': ,
-                    'work': self.work4,
-                    'public': True
-                    }
+                   'corpus': self.corpus,
+                   'document_id': '20002',
+                   'tei': '<TEI/>',
+                   'source': 'upload',
+                   'siglum': '02',
+                   'document_type': 'majuscule',
+                   'language': 'grc',
+                   # 'corrector_order': ,
+                   'total_verses': 5,
+                   'total_unique_verses': 5,
+                   # 'user': ,
+                   'work': self.work4,
+                   'public': True
+                   }
         self.t2 = transcription_models.Transcription.objects.create(**t2_data)
 
-        #add users
+        # add users
         self.u1 = self.add_user({'username': 'User1', 'password': 'secret'})
         self.u2 = self.add_user({'username': 'User2', 'password': 'secret'})
         self.u3 = self.add_transcriptions_superuser({'username': 'User3', 'password': 'secret'})
         self.u4 = self.add_user({'username': 'User4', 'password': 'secret'})
 
         t3_data = {'identifier': 'NT_GRC_03_John',
-                    'corpus': self.corpus,
-                    'document_id': '20003',
-                    'tei':' <TEI/>',
-                    'source': 'upload',
-                    'siglum': '03',
-                    'document_type': 'majuscule',
-                    'language': 'grc',
-                    #'corrector_order': ,
-                    'total_verses': 5,
-                    'total_unique_verses': 5,
-                    'user': self.u1,
-                    'work': self.work4,
-                    'public': False
-                    }
+                   'corpus': self.corpus,
+                   'document_id': '20003',
+                   'tei': '<TEI/>',
+                   'source': 'upload',
+                   'siglum': '03',
+                   'document_type': 'majuscule',
+                   'language': 'grc',
+                   # 'corrector_order': ,
+                   'total_verses': 5,
+                   'total_unique_verses': 5,
+                   'user': self.u1,
+                   'work': self.work4,
+                   'public': False
+                   }
         self.t3 = transcription_models.Transcription.objects.create(**t3_data)
 
         t4_data = {'identifier': 'NT_GRC_04_John',
-                    'corpus': self.corpus,
-                    'document_id': '20004',
-                    'tei':' <TEI/>',
-                    'source': 'upload',
-                    'siglum': '04',
-                    'document_type': 'majuscule',
-                    'language': 'grc',
-                    #'corrector_order': ,
-                    'total_verses': 5,
-                    'total_unique_verses': 5,
-                    'user': self.u2,
-                    'work': self.work4,
-                    'public': False
-                    }
+                   'corpus': self.corpus,
+                   'document_id': '20004',
+                   'tei': '<TEI/>',
+                   'source': 'upload',
+                   'siglum': '04',
+                   'document_type': 'majuscule',
+                   'language': 'grc',
+                   # 'corrector_order': ,
+                   'total_verses': 5,
+                   'total_unique_verses': 5,
+                   'user': self.u2,
+                   'work': self.work4,
+                   'public': False
+                   }
         self.t4 = transcription_models.Transcription.objects.create(**t4_data)
 
         t5_data = {'identifier': 'NT_GRC_05_John',
-                    'corpus': self.corpus,
-                    'document_id': '20005',
-                    'tei':' <TEI/>',
-                    'source': 'upload',
-                    'siglum': '05',
-                    'document_type': 'majuscule',
-                    'language': 'grc',
-                    #'corrector_order': ,
-                    'total_verses': 5,
-                    'total_unique_verses': 5,
-                    'user': self.u3,
-                    'work': self.work4,
-                    'public': False
-                    }
+                   'corpus': self.corpus,
+                   'document_id': '20005',
+                   'tei': '<TEI/>',
+                   'source': 'upload',
+                   'siglum': '05',
+                   'document_type': 'majuscule',
+                   'language': 'grc',
+                   # 'corrector_order': ,
+                   'total_verses': 5,
+                   'total_unique_verses': 5,
+                   'user': self.u3,
+                   'work': self.work4,
+                   'public': False
+                   }
         self.t5 = transcription_models.Transcription.objects.create(**t5_data)
 
 
@@ -224,6 +223,7 @@ class APIItemListTestsPublicModels(MyAPITestCase):
         self.assertEqual(response_json['count'], 2)
         self.assertEqual(len(response_json['results']), 1)
 
+
 class APIItemDetailTestsPublicModels(MyAPITestCase):
     base_url = '/api/{}/{}/{}'
 
@@ -253,7 +253,6 @@ class APIItemListTestsPublicOrUserModels(MyAPITestCase):
         self.assertEqual(response_json['results'][0]['identifier'], 'NT_GRC_01_John')
         self.assertEqual(response_json['results'][1]['identifier'], 'NT_GRC_02_John')
 
-
     def test_get_restricted_list_returns_all_public_for_anonymous_user_with_sort(self):
         self.add_transcription_data()
         response = self.client.get('%s?_sort=total_verses' % self.base_url.format('transcriptions', 'transcription'))
@@ -263,7 +262,6 @@ class APIItemListTestsPublicOrUserModels(MyAPITestCase):
         self.assertEqual(response_json['results'][0]['identifier'], 'NT_GRC_02_John')
         self.assertEqual(response_json['results'][1]['identifier'], 'NT_GRC_01_John')
 
-
     def test_get_restricted_list_returns_all_public_for_anonymous_user_with_filters(self):
         self.add_transcription_data()
         response = self.client.get('%s?total_verses=5' % self.base_url.format('transcriptions', 'transcription'))
@@ -272,10 +270,9 @@ class APIItemListTestsPublicOrUserModels(MyAPITestCase):
         self.assertEqual(len(response_json['results']), 1)
         self.assertEqual(response_json['results'][0]['identifier'], 'NT_GRC_02_John')
 
-
     def test_get_restricted_list_returns_nothing_for_anonymous_user_if_no_public_items(self):
         self.add_transcription_data()
-        #now make the two public ones private
+        # now make the two public ones private
         self.t1.public = False
         self.t1.save()
         self.t2.public = False
@@ -284,7 +281,6 @@ class APIItemListTestsPublicOrUserModels(MyAPITestCase):
         response_json = json.loads(response.content.decode('utf8'))
         self.assertEqual(response_json['count'], 0)
         self.assertEqual(len(response_json['results']), 0)
-
 
     def test_get_restricted_list_returns_public_and_owned_for_logged_in_regular_user(self):
         self.add_transcription_data()
@@ -299,7 +295,6 @@ class APIItemListTestsPublicOrUserModels(MyAPITestCase):
         self.assertEqual(response_json['results'][1]['identifier'], self.t2.identifier)
         self.assertEqual(response_json['results'][2]['identifier'], self.t4.identifier)
 
-
     def test_get_restricted_list_returns_public_only_for_logged_in_regular_user_if_no_owned(self):
         self.add_transcription_data()
         client = APIClient()
@@ -311,7 +306,6 @@ class APIItemListTestsPublicOrUserModels(MyAPITestCase):
         self.assertEqual(len(response_json['results']), 2)
         self.assertEqual(response_json['results'][0]['identifier'], self.t1.identifier)
         self.assertEqual(response_json['results'][1]['identifier'], self.t2.identifier)
-
 
     def test_get_restricted_list_returns_all_for_app_superuser(self):
         self.add_transcription_data()
@@ -343,13 +337,14 @@ class APIItemDetailTestsPublicOrUserModels(MyAPITestCase):
         self.assertEqual(response_json['siglum'], self.t1.siglum)
 
     def test_404_returned_if_no_item_for_anonymous_user(self):
-        response = self.client.get(self.base_url.format('transcriptions', 'transcription', 100001)) #stupidly high number so its not likely to exist
+        # stupidly high id number so its not likely to exist
+        response = self.client.get(self.base_url.format('transcriptions', 'transcription', 100001))
         response_json = json.loads(response.content.decode('utf8'))
         self.assertEqual(response.status_code, 404)
 
     def test_404_returned_for_private_item_for_anonymous_user(self):
-        #ideally this would return 401 but that would means much more code being added into the decorator
-        #The 404 is returned from the api class view
+        # ideally this would return 401 but that would means much more code being added into the decorator
+        # The 404 is returned from the api class view
         response = self.client.get(self.base_url.format('transcriptions', 'transcription', self.t5.id))
         response_json = json.loads(response.content.decode('utf8'))
         self.assertEqual(response.status_code, 404)
@@ -373,8 +368,8 @@ class APIItemDetailTestsPublicOrUserModels(MyAPITestCase):
         self.assertEqual(response_json['siglum'], self.t3.siglum)
 
     def test_404_returned_for_logged_in_user_if_not_owner(self):
-        #ideally this would return 403 but the filtering we use for item level permissions
-        #means it doesn't get found
+        # ideally this would return 403 but the filtering we use for item level permissions
+        # means it doesn't get found
         client = APIClient()
         login = client.login(username='User1', password='secret')
         self.assertEqual(login, True)
@@ -389,7 +384,6 @@ class APIItemDetailTestsPublicOrUserModels(MyAPITestCase):
         response = client.get(self.base_url.format('transcriptions', 'transcription', 100001))
         response_json = json.loads(response.content.decode('utf8'))
         self.assertEqual(response.status_code, 404)
-
 
     def test_public_item_returned_for_logged_in_superuser(self):
         client = APIClient()
@@ -412,10 +406,10 @@ class APIItemDetailTestsPublicOrUserModels(MyAPITestCase):
 
 class APIItemListTestsPublicOrUserNoPublicField(MyAPITestCase):
     base_url = '/api/{}/{}/'
-    #NB: There is no model that conforms to being 'public_or_user' availability
-    #and with no public field because that should never happen. So I will
-    #temporarily make an public one with no public field into a public_or_user one
-    #using setUp and tearDown (which is why this test is in its own class)
+    # NB: There is no model that conforms to being 'public_or_user' availability
+    # and with no public field because that should never happen. So I will
+    # temporarily make an public one with no public field into a public_or_user one
+    # using setUp and tearDown (which is why this test is in its own class)
 
     def setUp(self):
         transcription_models.Work.AVAILABILITY = 'public_or_user'
@@ -424,7 +418,7 @@ class APIItemListTestsPublicOrUserNoPublicField(MyAPITestCase):
         transcription_models.Work.AVAILABILITY = 'public'
 
     def test_get_restricted_list_returns_500_for_anonymous_user_if_no_public_field_on_model(self):
-        #500 because it makes no sense and is a server config error really
+        # 500 because it makes no sense and is a server config error really
         self.add_transcription_data()
         response = self.client.get(self.base_url.format('transcriptions', 'work'))
         response_json = json.loads(response.content.decode('utf8'))
@@ -433,11 +427,11 @@ class APIItemListTestsPublicOrUserNoPublicField(MyAPITestCase):
 
 class APIItemListTestsPrivateModels(MyAPITestCase):
     base_url = '/api/{}/{}/'
-    #I don't want the tests to be dependent on too many apps
-    #As the transcription app is one of the requirements of most of the others
-    #it would be good if tests were restricted to this app only.
-    #We don't have any private models in this app so instead I will change the
-    #status of the transcription model in these tests (and put it back at the end).
+    # I don't want the tests to be dependent on too many apps
+    # As the transcription app is one of the requirements of most of the others
+    # it would be good if tests were restricted to this app only.
+    # We don't have any private models in this app so instead I will change the
+    # status of the transcription model in these tests (and put it back at the end).
 
     def setUp(self):
         transcription_models.Transcription.AVAILABILITY = 'private'
@@ -476,13 +470,14 @@ class APIItemListTestsPrivateModels(MyAPITestCase):
         self.assertEqual(response_json['results'][3]['identifier'], self.t4.identifier)
         self.assertEqual(response_json['results'][4]['identifier'], self.t5.identifier)
 
+
 class APIItemDetailTestsPrivateModels(MyAPITestCase):
     base_url = '/api/{}/{}/{}'
-    #I don't want the tests to be dependent on too many apps
-    #As the transcription app is one of the requirements of most of the others
-    #it would be good if tests were restricted to this app only.
-    #We don't have any private models in this app so instead I will change the
-    #status of the transcription model in these tests (and put it back at the end).
+    # I don't want the tests to be dependent on too many apps
+    # As the transcription app is one of the requirements of most of the others
+    # it would be good if tests were restricted to this app only.
+    # We don't have any private models in this app so instead I will change the
+    # status of the transcription model in these tests (and put it back at the end).
 
     def setUp(self):
         transcription_models.Work.AVAILABILITY = 'public_or_user'
@@ -492,13 +487,14 @@ class APIItemDetailTestsPrivateModels(MyAPITestCase):
         transcription_models.Work.AVAILABILITY = 'public'
 
     def test_404_returned_if_no_item_for_anonymous_user(self):
-        response = self.client.get(self.base_url.format('transcriptions', 'transcription', 100001)) #stupidly high number so its not likely to exist
+        # use stupidly high id number so its not likely to exist
+        response = self.client.get(self.base_url.format('transcriptions', 'transcription', 100001))
         response_json = json.loads(response.content.decode('utf8'))
         self.assertEqual(response.status_code, 404)
 
     def test_404_returned_for_existing_item_for_anonymous_user(self):
-        #ideally this would return 401
-        response = self.client.get(self.base_url.format('transcriptions', 'transcription', self.t5.id)) #stupidly high number so its not likely to exist
+        # ideally this would return 401
+        response = self.client.get(self.base_url.format('transcriptions', 'transcription', self.t5.id))
         response_json = json.loads(response.content.decode('utf8'))
         self.assertEqual(response.status_code, 404)
 
@@ -513,7 +509,7 @@ class APIItemDetailTestsPrivateModels(MyAPITestCase):
         self.assertEqual(response_json['siglum'], self.t3.siglum)
 
     def test_404_returned_for_logged_in_user_if_not_owner(self):
-        #ideally this would return 403
+        # ideally this would return 403
         client = APIClient()
         login = client.login(username='User1', password='secret')
         self.assertEqual(login, True)
@@ -538,6 +534,3 @@ class APIItemDetailTestsPrivateModels(MyAPITestCase):
         self.assertEqual(response_json['public'], False)
         self.assertNotEqual(response_json['user'], self.u3.id)
         self.assertEqual(response_json['siglum'], self.t3.siglum)
-
-#class APIItemDetailTestPublicOrProjectModels(APITestCase):
-    #These tests are dependent on the collation app which is not ideal they should really be in there

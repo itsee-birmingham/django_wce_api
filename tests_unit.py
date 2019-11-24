@@ -10,10 +10,11 @@ from api.views import SelectPagePaginator
 from citations import serializers
 from api.serializers import SimpleSerializer
 
+
 class APIHelperTests(TestCase):
 
     def test_getCount(self):
-        #with a query set
+        # with a query set
         a1_data = {'created_by': 'cat',
                    'created_time': timezone.now(),
                    'abbreviation': 'TA1',
@@ -33,14 +34,14 @@ class APIHelperTests(TestCase):
         count = views._getCount(query_set)
         self.assertEqual(count, 2)
 
-        #and with a list
+        # and with a list
         test_list = ['item', 'item']
         count = views._getCount(test_list)
         self.assertEqual(count, 2)
 
     def test_getQueryTuple(self):
-        #this is testing the code and a few random selections from the operator_lookup dictionary
-        #it is not really designed to test the dictionary - I think it is a constant
+        # this is testing the code and a few random selections from the operator_lookup dictionary
+        # it is not really designed to test the dictionary - I think it is a constant
         expected_return = ('full_name__istartswith', 'Test')
         query_tuple = views.getQueryTuple('TextField', 'full_name', 'Test*|i')
         self.assertEqual(expected_return, query_tuple)
@@ -81,11 +82,11 @@ class APIHelperTests(TestCase):
     def test_getFieldFilters(self):
         rf = RequestFactory()
 
-        #I will test most of the code with simple author abbreviation searches
-        #it gives us decent line coverage and keeps the test code readable
-        #to get better branch combination coverage there probably needs to be some complex test cases
+        # I will test most of the code with simple author abbreviation searches
+        # it gives us decent line coverage and keeps the test code readable
+        # to get better branch combination coverage there probably needs to be some complex test cases
 
-        #positive value in filter mode
+        # positive value in filter mode
         expected_query = Q()
         expected_query &= Q(('abbreviation__startswith', 'T'))
         request = rf.get('/api/citations/author?abbreviation=T*')
@@ -93,7 +94,7 @@ class APIHelperTests(TestCase):
         query = views.getFieldFilters(requestQuery, models.Author, 'filter')
         self.assertEqual(str(expected_query), str(query))
 
-        #negative value in exclude mode
+        # negative value in exclude mode
         expected_query = Q()
         expected_query &= Q(('abbreviation__startswith', 'T'))
         request = rf.get('/api/citations/author?abbreviation=!T*')
@@ -101,14 +102,14 @@ class APIHelperTests(TestCase):
         query = views.getFieldFilters(requestQuery, models.Author, 'exclude')
         self.assertEqual(str(expected_query), str(query))
 
-        #negative value in filter mode - which should return an empty query
+        # negative value in filter mode - which should return an empty query
         expected_query = Q()
         request = rf.get('/api/citations/author?abbreviation=!T*')
         requestQuery = dict(request.GET)
         query = views.getFieldFilters(requestQuery, models.Author, 'filter')
         self.assertEqual(str(expected_query), str(query))
 
-        #now test list filters
+        # now test list filters
         expected_query = Q()
         subquery = Q()
         subquery |= Q(('abbreviation', 'TA1'))
@@ -119,7 +120,7 @@ class APIHelperTests(TestCase):
         query = views.getFieldFilters(requestQuery, models.Author, 'filter')
         self.assertEqual(str(expected_query), str(query))
 
-        #positive value in filter mode with foreign key
+        # positive value in filter mode with foreign key
         expected_query = Q()
         expected_query &= Q(('author__abbreviation__startswith', 'T'))
         request = rf.get('/api/citations/work/?author__abbreviation=T*')
@@ -127,8 +128,8 @@ class APIHelperTests(TestCase):
         query = views.getFieldFilters(requestQuery, models.Work, 'filter')
         self.assertEqual(str(expected_query), str(query))
 
-        #positive value in filter mode with nonsense field
-        #should produce empty query so it does not stop results returning
+        # positive value in filter mode with nonsense field
+        # should produce empty query so it does not stop results returning
         expected_query = Q()
         expected_query &= Q()
         request = rf.get('/api/citations/work/?nonsense=T*')
@@ -137,7 +138,7 @@ class APIHelperTests(TestCase):
         self.assertEqual(str(expected_query), str(query))
 
     def test_SelectPagePaginator(self):
-        #with a query set
+        # with a query set
         a1_data = {'created_by': 'cat',
                    'created_time': timezone.now(),
                    'abbreviation': 'TA1',
@@ -167,21 +168,21 @@ class APIHelperTests(TestCase):
         self.assertIn(a3, result[0])
         self.assertEqual(result[1], 2)
 
-        #if we are showing all records anyway (this will actually default to 100 because of your default)
+        # if we are showing all records anyway (this will actually default to 100 because of your default)
         request = Request(rf.get('/api/citations/author'))
         paginator = SelectPagePaginator()
         result = paginator.paginate_queryset_and_get_page(models.Author.objects.all(), request, index_required=3)
         self.assertEqual(len(result[0]), 3)
 
-        #if we are showing all records anyway (this will actually default to 100 because of your default)
+        # if we are showing all records anyway (this will actually default to 100 because of your default)
         request = Request(rf.get('/api/citations/works'))
         paginator = SelectPagePaginator()
         result = paginator.paginate_queryset_and_get_page(models.Work.objects.all(), request, index_required=3)
         self.assertEqual(result, [])
 
 
-#these are tests for specific functions in the model class I want to check
-#rather than testing the whole view at once
+# these are tests for specific functions in the model class I want to check
+# rather than testing the whole view at once
 class ItemListUnitTests(TestCase):
 
     def test_get_serializer_class(self):
@@ -197,7 +198,7 @@ class ItemListUnitTests(TestCase):
         self.assertEqual(serializer_class, serializers.PrivateCitationSerializer)
 
     def test_get_offset_required(self):
-        #with a query set
+        # with a query set
         a1_data = {'created_by': 'cat',
                    'created_time': timezone.now(),
                    'abbreviation': 'TA1',
@@ -230,6 +231,7 @@ class ItemListUnitTests(TestCase):
 
         position = item_list_view.get_offset_required(queryset, 99)
         self.assertEqual(position, 0)
+
 
 class ItemDetailUnitTests(TestCase):
 
