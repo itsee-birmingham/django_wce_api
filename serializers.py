@@ -19,7 +19,7 @@ class SimpleSerializer(serializers.ModelSerializer):
             if fields:
                 self.Meta.fields = fields
             else:
-                self.Meta.fields = self.Meta.model.getSerializationFields()
+                self.Meta.fields = self.Meta.model.get_serialization_fields()
 
         elif 'app' in context and 'model' in context:
             self.Meta.model = apps.get_model(context['app'], context['model'])
@@ -36,7 +36,7 @@ class BaseModelSerializer(serializers.ModelSerializer):
         if 'fields' in kwargs:
             self.Meta.fields = kwargs['fields']
         else:
-            self.Meta.fields = self.Meta.model.getSerializationFields()
+            self.Meta.fields = self.Meta.model.get_serialization_fields()
 
         if len(args) > 0 and 'data' in kwargs:
             super(BaseModelSerializer, self).__init__(instance=args[0], data=kwargs['data'], partial=partial)
