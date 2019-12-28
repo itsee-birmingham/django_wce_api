@@ -223,7 +223,7 @@ class ItemList(generics.ListAPIView):
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
         try:
             related_keys = target.RELATED_KEYS
-        except:
+        except AttributeError:
             related_keys = [None]
         # we only need to use select_related here (and not use prefetch_related) as the lists
         # only show data from a single model and its Foreign keys
@@ -231,6 +231,7 @@ class ItemList(generics.ListAPIView):
         hits = target.objects.all().select_related(*related_keys)
         if 'supplied_filter' in self.kwargs and self.kwargs['supplied_filter'] is not None:
             hits = hits.filter(self.kwargs['supplied_filter'])
+
         requestQuery = dict(self.request.GET)
         filter_query = getFieldFilters(requestQuery, target, 'filter')
         exclude_query = getFieldFilters(requestQuery, target, 'exclude')
