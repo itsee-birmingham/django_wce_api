@@ -97,16 +97,52 @@ def apply_model_get_restrictions(function):
             if 'project__id' not in request.GET and 'project' not in request.GET:
                 return JsonResponse({'message': "Query not complete - Project must be specified"}, status=400)
 
+            if 'project' in request.GET and 'project__id' not in request.GET:
+                print('WARNING: project should be project__id to make sure this works')
+
             if request.user.groups.filter(name='%s_superuser' % kwargs['app']).count() > 0:
                 return function(request, *args, **kwargs)
 
             # Here we need to grab the user fields and add them to the query against the user
             project_model = apps.get_model(kwargs['app'], 'Project')
             user_fields = project_model.get_user_fields()
+
             query = Q()
             for field in user_fields:
                 query_tuple = api_views.getQueryTuple(user_fields[field], field, request.user)
                 query |= Q(('project__%s' % (query_tuple[0]), query_tuple[1]))
+            kwargs['supplied_filter'] = query
+            return function(request, *args, **kwargs)
+
+        elif availability == 'project_or_user':
+
+            if not request.user.is_authenticated:  # we are not logged in
+                # You get nothing
+                return JsonResponse({'message': "Authentication required"}, status=401)
+
+            if 'project' not in target.get_fields():
+                return JsonResponse(
+                        {'message': "Internal server error - model configuation incompatible with API (code 10003)"},
+                        status=500
+                        )
+
+            # a project must be specified in any request to a model of this type
+            if 'project__id' not in request.GET and 'project' not in request.GET:
+                return JsonResponse({'message': "Query not complete - Project must be specified"}, status=400)
+
+            if request.user.groups.filter(name='%s_superuser' % kwargs['app']).count() > 0:
+                return function(request, *args, **kwargs)
+
+            # Here we need to grab the user fields and add them to the query against the user
+            project_model = apps.get_model(kwargs['app'], 'Project')
+            user_fields = project_model.get_user_fields()
+
+            # first add the user as a field since this is project_or_user
+            query = Q(api_views.getQueryTuple('ForeignKey', 'user', request.user))
+            for field in user_fields:
+                query_tuple = api_views.getQueryTuple(user_fields[field], field, request.user)
+                query |= Q(('project__%s' % (query_tuple[0]), query_tuple[1]))
+
             kwargs['supplied_filter'] = query
             return function(request, *args, **kwargs)
 
