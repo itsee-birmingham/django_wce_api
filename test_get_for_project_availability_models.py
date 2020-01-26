@@ -241,7 +241,7 @@ class APIItemListTestsProjectsBadConfiguration(MyAPITestCase):
         response = client.get(self.base_url.format('citations', 'citation'))
         response_json = json.loads(response.content.decode('utf8'))
         self.assertEqual(response.status_code, 500)
-        self.assertEqual(response_json['message'], 'Internal server error - model configuation incompatible with API')
+        self.assertEqual(response_json['message'], 'Internal server error - model configuation incompatible with API (code 10003)')
 
 
 class APIItemListTestsProjectModels(MyAPITestCase):
