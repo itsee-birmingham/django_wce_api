@@ -248,7 +248,7 @@ class ItemList(generics.ListAPIView):
         if '_sort' in self.request.GET:
             sort_by = self.request.GET.get('_sort').split(',')
             hits = hits.order_by(*sort_by)
-        return hits.distinct('id')
+        return hits
 
     def get(self, request, app, model, supplied_filter=None):
         return self.list(request)
@@ -413,7 +413,7 @@ class ItemDetail(generics.RetrieveAPIView):
         hits = target.objects.all().select_related(*related_keys).prefetch_related(*prefetch_keys)
         if 'supplied_filter' in self.kwargs and self.kwargs['supplied_filter'] is not None:
             hits = hits.filter(self.kwargs['supplied_filter'])
-        return hits.distinct('id')
+        return hits
 
     def get_serializer_class(self):
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
