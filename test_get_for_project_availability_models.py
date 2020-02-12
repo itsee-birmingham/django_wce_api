@@ -32,7 +32,7 @@ class MyAPITestCase(TestCase):
         return user
 
     def add_collation_superuser(self, credentials):
-        g1 = Group(name='collation_superuser')
+        g1 = Group(name='collation_superusers')
         g1.save()
         if 'display_name' in credentials:
             display_name = credentials['display_name']

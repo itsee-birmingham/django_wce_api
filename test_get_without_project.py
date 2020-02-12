@@ -31,7 +31,7 @@ class MyAPITestCase(TestCase):
         return user
 
     def add_transcriptions_superuser(self, credentials):
-        g1 = Group(name='transcriptions_superuser')
+        g1 = Group(name='transcriptions_superusers')
         g1.save()
         if 'display_name' in credentials:
             display_name = credentials['display_name']

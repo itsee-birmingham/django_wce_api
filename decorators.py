@@ -60,7 +60,7 @@ def apply_model_get_restrictions(function):
                 kwargs['supplied_filter'] = query
                 return function(request, *args, **kwargs)
 
-            if request.user.groups.filter(name='%s_superuser' % kwargs['app']).count() > 0:
+            if request.user.groups.filter(name='%s_superusers' % kwargs['app']).count() > 0:
                 return function(request, *args, **kwargs)
 
             if 'project__id' not in request.GET and 'project' not in request.GET:
@@ -100,7 +100,7 @@ def apply_model_get_restrictions(function):
             if 'project' in request.GET and 'project__id' not in request.GET:
                 print('WARNING: project should be project__id to make sure this works')
 
-            if request.user.groups.filter(name='%s_superuser' % kwargs['app']).count() > 0:
+            if request.user.groups.filter(name='%s_superusers' % kwargs['app']).count() > 0:
                 return function(request, *args, **kwargs)
 
             # Here we need to grab the user fields and add them to the query against the user
@@ -130,7 +130,7 @@ def apply_model_get_restrictions(function):
             if 'project__id' not in request.GET and 'project' not in request.GET:
                 return JsonResponse({'message': "Query not complete - Project must be specified"}, status=400)
 
-            if request.user.groups.filter(name='%s_superuser' % kwargs['app']).count() > 0:
+            if request.user.groups.filter(name='%s_superusers' % kwargs['app']).count() > 0:
                 return function(request, *args, **kwargs)
 
             # Here we need to grab the user fields and add them to the query against the user
@@ -164,7 +164,7 @@ def apply_model_get_restrictions(function):
                 kwargs['supplied_filter'] = query
                 return function(request, *args, **kwargs)
 
-            if request.user.groups.filter(name='%s_superuser' % kwargs['app']).count() > 0:
+            if request.user.groups.filter(name='%s_superusers' % kwargs['app']).count() > 0:
                 return function(request, *args, **kwargs)
 
             query = Q()
@@ -179,7 +179,7 @@ def apply_model_get_restrictions(function):
                 # You get nothing
                 return JsonResponse({'message': "Authentication required"}, status=401)
 
-            if request.user.groups.filter(name='%s_superuser' % kwargs['app']).count() > 0:
+            if request.user.groups.filter(name='%s_superusers' % kwargs['app']).count() > 0:
                 return function(request, *args, **kwargs)
 
             query = Q(('user', request.user))
