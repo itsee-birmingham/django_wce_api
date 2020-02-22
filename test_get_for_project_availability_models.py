@@ -19,12 +19,12 @@ from unittest import skip
 class MyAPITestCase(TestCase):
 
     def add_user(self, credentials):
-        if 'display_name' in credentials:
-            display_name = credentials['display_name']
-            del credentials['display_name']
+        if 'public_name' in credentials:
+            public_name = credentials['public_name']
+            del credentials['public_name']
             user = User.objects.create_user(**credentials)
             user.save()
-            user.display_name = display_name
+            user.public_name = public_name
             user.save()
         else:
             user = User.objects.create_user(**credentials)
@@ -34,13 +34,13 @@ class MyAPITestCase(TestCase):
     def add_collation_superuser(self, credentials):
         g1 = Group(name='collation_superusers')
         g1.save()
-        if 'display_name' in credentials:
-            display_name = credentials['display_name']
-            del credentials['display_name']
+        if 'public_name' in credentials:
+            public_name = credentials['public_name']
+            del credentials['public_name']
             user = User.objects.create_user(**credentials)
             user.groups.add(g1)
             user.save()
-            user.display_name = display_name
+            user.public_name = public_name
             user.save()
         else:
             user = User.objects.create_user(**credentials)
