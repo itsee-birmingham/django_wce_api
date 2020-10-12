@@ -237,7 +237,7 @@ class ItemList(generics.ListAPIView):
 
         filter_query = getFieldFilters(requestQuery, target, 'filter')
         exclude_query = getFieldFilters(requestQuery, target, 'exclude')
-        hits = hits.exclude(exclude_query).filter(filter_query)
+        hits = hits.exclude(exclude_query).filter(filter_query).distinct()
 
         # override fields if required - only used for internal calls from other apps
         if fields:
@@ -338,7 +338,7 @@ class PrivateItemList(generics.ListAPIView):
         requestQuery = dict(self.request.GET)
         filter_query = getFieldFilters(requestQuery, target, 'filter')
         exclude_query = getFieldFilters(requestQuery, target, 'exclude')
-        hits = hits.exclude(exclude_query).filter(filter_query)
+        hits = hits.exclude(exclude_query).filter(filter_query).distinct()
 
         # override fields if required - only used for internal calls from other apps
         if fields:
