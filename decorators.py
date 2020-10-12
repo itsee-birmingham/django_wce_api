@@ -20,7 +20,7 @@ def apply_model_get_restrictions(function):
         if 'pk' in kwargs:
             try:
                 target.objects.get(pk=kwargs['pk'])
-            except:
+            except target.DoesNotExist:
                 return JsonResponse({'message': "Item does not exist"}, status=404)
 
         # if we get this far we are looking either for a list or a single item which

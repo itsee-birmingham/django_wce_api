@@ -208,7 +208,7 @@ class ItemList(generics.ListAPIView):
         try:
             serializer_name = target.SERIALIZER
             serializer = getattr(importlib.import_module('%s.serializers' % self.kwargs['app']), serializer_name)
-        except:
+        except Exception:
             serializer = SimpleSerializer
         return serializer
 
@@ -256,7 +256,7 @@ class ItemList(generics.ListAPIView):
     def get_offset_required(self, queryset, item_id):
         try:
             item_position = list(queryset.values_list('id', flat=True)).index(int(item_id))
-        except:
+        except Exception:
             item_position = 0
         return item_position
 
@@ -267,7 +267,10 @@ class ItemList(generics.ListAPIView):
         if self.paginator is None:
             return None
         if index_required is not None:
-            return self.paginator.paginate_queryset_and_get_page(queryset, self.request, view=self, index_required=index_required)
+            return self.paginator.paginate_queryset_and_get_page(queryset,
+                                                                 self.request,
+                                                                 view=self,
+                                                                 index_required=index_required)
 
 # If you do also need post here then this will work - it is disabled now until we need it
 #     def post(self, request, app, model):
@@ -309,7 +312,7 @@ class PrivateItemList(generics.ListAPIView):
         try:
             serializer_name = target.SERIALIZER
             serializer = getattr(importlib.import_module('%s.serializers' % self.kwargs['app']), serializer_name)
-        except:
+        except Exception:
             serializer = SimpleSerializer
         return serializer
 
@@ -324,7 +327,7 @@ class PrivateItemList(generics.ListAPIView):
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
         try:
             related_keys = target.RELATED_KEYS
-        except:
+        except Exception:
             related_keys = [None]
         # we only need to use select_related here (and not use prefetch_related) as the lists only show
         # data from a single model and its Foreign keys
@@ -355,7 +358,7 @@ class PrivateItemList(generics.ListAPIView):
     def get_offset_required(self, queryset, item_id):
         try:
             item_position = list(queryset.values_list('id', flat=True)).index(int(item_id))
-        except:
+        except Exception:
             item_position = 0
         return item_position
 
@@ -366,7 +369,10 @@ class PrivateItemList(generics.ListAPIView):
         if self.paginator is None:
             return None
         if index_required is not None:
-            return self.paginator.paginate_queryset_and_get_page(queryset, self.request, view=self, index_required=index_required)
+            return self.paginator.paginate_queryset_and_get_page(queryset,
+                                                                 self.request,
+                                                                 view=self,
+                                                                 index_required=index_required)
 
 # If you do also need post here then this will work - it is disabled now until we need it
 #     def post(self, request, app, model):
@@ -404,11 +410,11 @@ class ItemDetail(generics.RetrieveAPIView):
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
         try:
             prefetch_keys = target.PREFETCH_KEYS
-        except:
+        except Exception:
             prefetch_keys = [None]
         try:
             related_keys = target.RELATED_KEYS
-        except:
+        except Exception:
             related_keys = [None]
         hits = target.objects.all().select_related(*related_keys).prefetch_related(*prefetch_keys)
         if 'supplied_filter' in self.kwargs and self.kwargs['supplied_filter'] is not None:
@@ -420,7 +426,7 @@ class ItemDetail(generics.RetrieveAPIView):
         try:
             serializer_name = target.SERIALIZER
             serializer = getattr(importlib.import_module('%s.serializers' % self.kwargs['app']), serializer_name)
-        except:
+        except Exception:
             serializer = SimpleSerializer
         return serializer
 
@@ -470,11 +476,11 @@ class PrivateItemDetail(generics.RetrieveAPIView):
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
         try:
             prefetch_keys = target.PREFETCH_KEYS
-        except:
+        except Exception:
             prefetch_keys = [None]
         try:
             related_keys = target.RELATED_KEYS
-        except:
+        except Exception:
             related_keys = [None]
         hits = target.objects.all().select_related(*related_keys).prefetch_related(*prefetch_keys)
         if 'supplied_filter' in self.kwargs and self.kwargs['supplied_filter'] is not None:
@@ -486,7 +492,7 @@ class PrivateItemDetail(generics.RetrieveAPIView):
         try:
             serializer_name = target.SERIALIZER
             serializer = getattr(importlib.import_module('%s.serializers' % self.kwargs['app']), serializer_name)
-        except:
+        except Exception:
             serializer = SimpleSerializer
         return serializer
 
@@ -594,7 +600,8 @@ class ItemUpdate(generics.UpdateAPIView):
         updated_instance = ItemDetail().get_item(request, **kwargs)
 
         try:
-            # return Response(serializer(updated_instance).data, headers={'etag': '%s' % updated_instance['version_number']})
+            # return Response(serializer(updated_instance).data,
+            # headers={'etag': '%s' % updated_instance['version_number']})
             return Response(updated_instance, headers={'etag': '%s' % updated_instance['version_number']})
         except KeyError:
             # return Response(serializer(updated_instance).data)
@@ -645,7 +652,7 @@ class ItemCreate(generics.CreateAPIView):
         headers = self.get_success_headers(serializer.data)
         try:
             headers['etag'] = '%s' % created_instance['version_number']
-        except:
+        except Exception:
             pass
         return Response(created_instance, status=status.HTTP_201_CREATED, headers=headers)
 
