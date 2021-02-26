@@ -577,16 +577,16 @@ class ItemUpdate(generics.UpdateAPIView):
                 data['last_modified_time'] = datetime.datetime.now()
                 if hasattr(request.user, 'public_name') and request.user.public_name != '':
                     data['last_modified_by'] = request.user.public_name
-                elif hasattr(request.user, 'display_name') and request.user.display_name != '':
-                    data['last_modified_by'] = request.user.display_name
+                elif hasattr(request.user, 'full_name') and request.user.full_name != '':
+                    data['last_modified_by'] = request.user.full_name
                 else:
                     data['last_modified_by'] = request.user.username
         else:
             data['last_modified_time'] = datetime.datetime.now()
             if hasattr(request.user, 'public_name') and request.user.public_name != '':
                 data['last_modified_by'] = request.user.public_name
-            elif hasattr(request.user, 'display_name') and request.user.display_name != '':
-                data['last_modified_by'] = request.user.display_name
+            elif hasattr(request.user, 'full_name') and request.user.full_name != '':
+                data['last_modified_by'] = request.user.full_name
             else:
                 data['last_modified_by'] = request.user.username
 
@@ -646,8 +646,8 @@ class ItemCreate(generics.CreateAPIView):
         data['created_time'] = datetime.datetime.now()
         if hasattr(request.user, 'public_name') and request.user.public_name != '':
             data['created_by'] = request.user.public_name
-        elif hasattr(request.user, 'display_name') and request.user.display_name != '':
-            data['created_by'] = request.user.display_name
+        elif hasattr(request.user, 'full_name') and request.user.full_name != '':
+            data['created_by'] = request.user.full_name
         else:
             data['created_by'] = request.user.username
         serializer = self.get_serializer(data=data)
@@ -700,8 +700,8 @@ class M2MItemDelete(generics.UpdateAPIView):
         instance.last_modified_time = datetime.datetime.now()
         if hasattr(request.user, 'public_name') and request.user.public_name != '':
             instance.last_modified_by = request.user.public_name
-        elif hasattr(request.user, 'display_name') and request.user.display_name != '':
-            instance.last_modified_by = request.user.display_name
+        elif hasattr(request.user, 'full_name') and request.user.full_name != '':
+            instance.last_modified_by = request.user.full_name
         else:
             instance.last_modified_by = request.user.username
         instance.save()
