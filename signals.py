@@ -23,6 +23,7 @@ def increment_version(sender, instance, created, **kwargs):
             version_number += 1
         except TypeError:
             version_number = 1  # just in case something got saved with null
+
     # we can't save in a post_save or we get stuck in a recursion nightmare
     # Lots of places online say disconnect and reconnect the signal around the
     # save call but that felt wrong to me so I am using update instead of save
