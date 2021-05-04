@@ -105,7 +105,7 @@ def getRelatedFieldType(model, field):
         related_fields = related_model.get_fields()
     if '__' in field and field.split('__')[1] in related_fields:
         field_type = related_fields[field.split('__')[1]]
-        if field_type != 'ForeignKey':
+        if field_type not in ['ForeignKey', 'ManyToManyField']:
             return field_type
         else:
             return getRelatedFieldType(related_model, '__'.join(field.split('__')[1:]))
@@ -129,7 +129,7 @@ def getFieldFilters(queryDict, model_instance, type):
                 field_type = model_fields[field.split('__')[0]]
             else:
                 field_type = None
-            if field_type == 'ForeignKey':
+            if field_type == 'ForeignKey' or field_type == 'ManyToManyField':
                 field_type = getRelatedFieldType(model_instance, field)
             value_list = queryDict[field]
             # we do not support negation with OR so these are only done when we are filtering
