@@ -47,6 +47,17 @@ def _getCount(queryset):
         return len(queryset)
 
 
+def getDateField(operator, value):
+    value = value.replace(operator, '')
+    try:
+        date = datetime.datetime.strptime(value, '%Y').date()
+        if operator in ['<', '<=']:
+            date = date.replace(month=12, day=31)
+    except ValueError:
+        date = value
+    return date
+
+
 def getQueryTuple(field_type, field, value):
     operator_lookup = {
                        'CharField': [[r'^([^*|]+)\*$', '__startswith'], [r'^([^*|]+)\*\|i$', '__istartswith'],
@@ -59,7 +70,11 @@ def getQueryTuple(field_type, field, value):
                                      [r'^([^*|]+)\|i$', '__iexact']],
                        'IntegerField': [[r'^>([0-9]+)$', '__gt'], [r'^>=([0-9]+)$', '__gte'],
                                         [r'^<([0-9]+)$', '__lt'], [r'^<=([0-9]+)$', '__lte']],
-                       'ArrayField': [[r'^(.+)$', '__contains']],
+                       'DateField': [[r'^>([0-9]+)$', '__gt', getDateField('>', value)],
+                                     [r'^>=([0-9]+)$', '__gte', getDateField('>=', value)],
+                                     [r'^<([0-9]+)$', '__lt', getDateField('<', value)],
+                                     [r'^<=([0-9]+)$', '__lte', getDateField('<=', value)]],
+                       'ArrayField': [[r'^_eq(\d+)$', '__len'], [r'^_gt(\d+)$', '__len__gt'], [r'^(.+)$', '__contains']],
                        'NullBooleanField': [[r'^([tT]rue)$', '', True], [r'^([fF]alse)$', '', None]],
                        'BooleanField': [[r'^([tT]rue)$', '', True], [r'^([fF]alse)$', '', False]],
                        # this assumes that the search is for the value in the JSON field and that that
@@ -80,7 +95,7 @@ def getQueryTuple(field_type, field, value):
         if re.search(option[0], value):
             if len(option) > 2:
                 return ('%s%s' % (field, option[1]), option[2])
-            elif field_type == 'ArrayField':
+            elif field_type == 'ArrayField' and '__len' not in option[1]:
                 return ('%s%s' % (field, option[1]), [value])
             else:
                 return ('%s%s' % (field, option[1]), re.sub(option[0], '\\1', value))
@@ -117,6 +132,7 @@ def getFieldFilters(queryDict, model_instance, type):
     model_fields = model_instance.get_fields()
     query = Q()
     query_tuple = None
+    print(queryDict)
     for field in queryDict:
         if field == 'project':
             # project used to be in the list below and I have removed it because
@@ -154,6 +170,7 @@ def getFieldFilters(queryDict, model_instance, type):
                         if query_tuple:
                             query &= Q(query_tuple)
                             query_tuple = None
+    print(query)
     return query
 
 
