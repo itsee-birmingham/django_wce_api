@@ -146,6 +146,7 @@ def getFieldFilters(queryDict, model_instance, type):
             else:
                 field_type = None
             if field_type == 'ForeignKey' or field_type == 'ManyToManyField':
+                print(field_type)
                 field_type = getRelatedFieldType(model_instance, field)
             value_list = queryDict[field]
             # we do not support negation with OR so these are only done when we are filtering
@@ -251,7 +252,11 @@ class ItemList(generics.ListAPIView):
             hits = hits.filter(self.kwargs['supplied_filter'])
 
         requestQuery = dict(self.request.GET)
+        print('*******')
+        print(requestQuery)
 
+        # here getFieldFilters should return a list of queries rather than one with any additional many to many (after the first one)
+        # then after initial filter of hits add in extra filters for any additional queries - probably the same for exclude too
         filter_query = getFieldFilters(requestQuery, target, 'filter')
         exclude_query = getFieldFilters(requestQuery, target, 'exclude')
         hits = hits.exclude(exclude_query).filter(filter_query).distinct()
