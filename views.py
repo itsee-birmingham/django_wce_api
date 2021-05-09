@@ -131,8 +131,9 @@ def getRelatedFieldType(model, field):
 def getFieldFilters(queryDict, model_instance, type):
     model_fields = model_instance.get_fields()
     query = Q()
+    additional_queries = []
     query_tuple = None
-    print(queryDict)
+    m2m_list = []
     for field in queryDict:
         if field == 'project':
             # project used to be in the list below and I have removed it because
@@ -146,12 +147,13 @@ def getFieldFilters(queryDict, model_instance, type):
             else:
                 field_type = None
             if field_type == 'ForeignKey' or field_type == 'ManyToManyField':
-                print(field_type)
+                m2m_list.append(field.split('__')[0])
                 field_type = getRelatedFieldType(model_instance, field)
             value_list = queryDict[field]
             # we do not support negation with OR so these are only done when we are filtering
             # I just don't think or-ing negatives on the same field key makes any sense
-            for value in value_list:
+            for i, value in enumerate(value_list):
+                # these are the OR fields
                 if ',' in value:
                     if type == 'filter':
                         subquery = Q()
@@ -163,16 +165,21 @@ def getFieldFilters(queryDict, model_instance, type):
                                     query_tuple = None
                         query &= subquery
                 else:
+                    # these are the AND fields
                     if value != '':
                         if type == 'exclude' and value[0] == '!':
                             query_tuple = getQueryTuple(field_type, field, value[1:])
                         elif type == 'filter' and value[0] != '!':
                             query_tuple = getQueryTuple(field_type, field, value)
-                        if query_tuple:
+                        if query_tuple and (i == 0 or field.split('__')[0] not in m2m_list):
                             query &= Q(query_tuple)
                             query_tuple = None
-    print(query)
-    return query
+                        elif query_tuple:
+                            additional_queries.append(Q(query_tuple))
+
+    queries = [query]
+    queries.extend(additional_queries)
+    return queries
 
 
 class SelectPagePaginator(LimitOffsetPagination):
@@ -252,14 +259,16 @@ class ItemList(generics.ListAPIView):
             hits = hits.filter(self.kwargs['supplied_filter'])
 
         requestQuery = dict(self.request.GET)
-        print('*******')
-        print(requestQuery)
 
-        # here getFieldFilters should return a list of queries rather than one with any additional many to many (after the first one)
-        # then after initial filter of hits add in extra filters for any additional queries - probably the same for exclude too
-        filter_query = getFieldFilters(requestQuery, target, 'filter')
-        exclude_query = getFieldFilters(requestQuery, target, 'exclude')
-        hits = hits.exclude(exclude_query).filter(filter_query).distinct()
+        filter_queries = getFieldFilters(requestQuery, target, 'filter')
+        exclude_queries = getFieldFilters(requestQuery, target, 'exclude')
+        hits = hits.exclude(exclude_queries[0]).filter(filter_queries[0]).distinct()
+        if len(filter_queries) > 1:
+            for query in filter_queries[1:]:
+                hits = hits.filter(query)
+        if len(exclude_queries) > 1:
+            for query in exclude_queries[1:]:
+                hits = hits.exclude(query)
 
         # override fields if required - only used for internal calls from other apps
         if fields:
