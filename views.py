@@ -1,27 +1,23 @@
+import re
+import importlib
+import datetime
+import copy
+import json as jsontools
 from django.http import Http404
 from django.apps import apps
 from accounts.models import User
 from accounts.serializers import UserSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from rest_framework import mixins
-from rest_framework import generics
-from rest_framework import permissions
+from rest_framework import status, mixins, generics, permissions
 from api.serializers import SimpleSerializer
 from rest_framework.renderers import JSONRenderer
 from django.db.models import Q
 from rest_framework.permissions import IsAuthenticated
-from django.db.models.deletion import ProtectedError
-from django.db.models.deletion import Collector
+from django.db.models.deletion import ProtectedError, Collector
 from django.contrib.admin.utils import NestedObjects
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.decorators import detail_route
-import re
-import importlib
-import datetime
-import json as jsontools
-import copy
 from django.views.decorators.http import etag
 from django.utils.decorators import method_decorator
 from rest_framework.decorators import api_view
@@ -70,11 +66,13 @@ def getQueryTuple(field_type, field, value):
                                      [r'^([^*|]+)\|i$', '__iexact']],
                        'IntegerField': [[r'^>([0-9]+)$', '__gt'], [r'^>=([0-9]+)$', '__gte'],
                                         [r'^<([0-9]+)$', '__lt'], [r'^<=([0-9]+)$', '__lte']],
-                       'DateField': [[r'^>([0-9]+)$', '__gt', getDateField('>', value)],
-                                     [r'^>=([0-9]+)$', '__gte', getDateField('>=', value)],
-                                     [r'^<([0-9]+)$', '__lt', getDateField('<', value)],
-                                     [r'^<=([0-9]+)$', '__lte', getDateField('<=', value)]],
-                       'ArrayField': [[r'^_eq(\d+)$', '__len'], [r'^_gt(\d+)$', '__len__gt'], [r'^(.+)$', '__contains']],
+                       'DateField': [[r'^>([0-9]+)$', '__gt', '', ['getDateField', '>', value]],
+                                     [r'^>=([0-9]+)$', '__gte', '', ['getDateField', '>=', value]],
+                                     [r'^<([0-9]+)$', '__lt', '', ['getDateField', '<', value]],
+                                     [r'^<=([0-9]+)$', '__lte', '', ['getDateField', '<=', value]]],
+                       'ArrayField': [[r'^_eq(\d+)$', '__len'],
+                                      [r'^_gt(\d+)$', '__len__gt'],
+                                      [r'^(.+)$', '__contains']],
                        'NullBooleanField': [[r'^([tT]rue)$', '', True], [r'^([fF]alse)$', '', None]],
                        'BooleanField': [[r'^([tT]rue)$', '', True], [r'^([fF]alse)$', '', False]],
                        # this assumes that the search is for the value in the JSON field and that that
@@ -93,7 +91,10 @@ def getQueryTuple(field_type, field, value):
         options = operator_lookup[field_type]
     for option in options:
         if re.search(option[0], value):
-            if len(option) > 2:
+            if len(option) > 3:
+                value = globals()[option[3][0]](option[3][1], option[3][2])
+                return ('%s%s' % (field, option[1]), value)
+            elif len(option) > 2:
                 return ('%s%s' % (field, option[1]), option[2])
             elif field_type == 'ArrayField' and '__len' not in option[1]:
                 return ('%s%s' % (field, option[1]), [value])
