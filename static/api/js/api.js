@@ -114,9 +114,12 @@ var api = (function (){
     });
   };
 
-  //TODO: This needs updating with project option like the promise version but not sure what will break!
-  getItemFromDatabase = function (app, model, id, success_callback, error_callback) {
-    $.ajax({'url': '/api/' + app + '/' + model + '/' + id,
+  getItemFromDatabase = function (app, model, id, project, success_callback, error_callback) {
+    var url = '/api/' + app + '/' + model + '/' + id;
+    if (project !== undefined) {
+      url += '?project__id=' + project;
+    }
+    $.ajax({'url': url,
         'method': 'GET'}
     ).done(function (response, textStatus, jqXHR) {
       setEtag(app, model, id, jqXHR.getResponseHeader('etag'));

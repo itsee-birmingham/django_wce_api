@@ -418,7 +418,7 @@ class ItemDetail(generics.RetrieveAPIView):
             related_keys = [None]
         hits = target.objects.all().select_related(*related_keys).prefetch_related(*prefetch_keys)
         if 'supplied_filter' in self.kwargs and self.kwargs['supplied_filter'] is not None:
-            hits = hits.filter(self.kwargs['supplied_filter'])
+            hits = hits.filter(self.kwargs['supplied_filter']).distinct()
         return hits
 
     def get_serializer_class(self):
