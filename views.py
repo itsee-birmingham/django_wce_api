@@ -469,7 +469,7 @@ class ItemDetail(generics.RetrieveAPIView):
         serializer = self.get_serializer(instance)
         try:
             return Response(serializer.data, headers={'etag': '%d' % instance.version_number})
-        except AttributeError:
+        except (AttributeError, TypeError):
             return Response(serializer.data)
 
     # this one is used by the regular api calls
