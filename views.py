@@ -1,27 +1,23 @@
+import re
+import importlib
+import datetime
+import copy
+import json as jsontools
 from django.http import Http404
 from django.apps import apps
 from accounts.models import User
 from accounts.serializers import UserSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from rest_framework import mixins
-from rest_framework import generics
-from rest_framework import permissions
+from rest_framework import status, mixins, generics, permissions
 from api.serializers import SimpleSerializer
 from rest_framework.renderers import JSONRenderer
 from django.db.models import Q
 from rest_framework.permissions import IsAuthenticated
-from django.db.models.deletion import ProtectedError
-from django.db.models.deletion import Collector
+from django.db.models.deletion import ProtectedError, Collector
 from django.contrib.admin.utils import NestedObjects
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.decorators import detail_route
-import re
-import importlib
-import datetime
-import json as jsontools
-import copy
 from django.views.decorators.http import etag
 from django.utils.decorators import method_decorator
 from rest_framework.decorators import api_view
@@ -47,6 +43,17 @@ def _getCount(queryset):
         return len(queryset)
 
 
+def getDateField(operator, value):
+    value = value.replace(operator, '')
+    try:
+        date = datetime.datetime.strptime(value, '%Y').date()
+        if operator in ['<', '<=']:
+            date = date.replace(month=12, day=31)
+    except ValueError:
+        date = value
+    return date
+
+
 def getQueryTuple(field_type, field, value):
     operator_lookup = {
                        'CharField': [[r'^([^*|]+)\*$', '__startswith'], [r'^([^*|]+)\*\|i$', '__istartswith'],
@@ -59,7 +66,13 @@ def getQueryTuple(field_type, field, value):
                                      [r'^([^*|]+)\|i$', '__iexact']],
                        'IntegerField': [[r'^>([0-9]+)$', '__gt'], [r'^>=([0-9]+)$', '__gte'],
                                         [r'^<([0-9]+)$', '__lt'], [r'^<=([0-9]+)$', '__lte']],
-                       'ArrayField': [[r'^(.+)$', '__contains']],
+                       'DateField': [[r'^>([0-9]+)$', '__gt', '', ['getDateField', '>', value]],
+                                     [r'^>=([0-9]+)$', '__gte', '', ['getDateField', '>=', value]],
+                                     [r'^<([0-9]+)$', '__lt', '', ['getDateField', '<', value]],
+                                     [r'^<=([0-9]+)$', '__lte', '', ['getDateField', '<=', value]]],
+                       'ArrayField': [[r'^_eq(\d+)$', '__len'],
+                                      [r'^_gt(\d+)$', '__len__gt'],
+                                      [r'^(.+)$', '__contains']],
                        'NullBooleanField': [[r'^([tT]rue)$', '', True], [r'^([fF]alse)$', '', None]],
                        'BooleanField': [[r'^([tT]rue)$', '', True], [r'^([fF]alse)$', '', False]],
                        # this assumes that the search is for the value in the JSON field and that that
@@ -78,9 +91,12 @@ def getQueryTuple(field_type, field, value):
         options = operator_lookup[field_type]
     for option in options:
         if re.search(option[0], value):
-            if len(option) > 2:
+            if len(option) > 3:
+                value = globals()[option[3][0]](option[3][1], option[3][2])
+                return ('%s%s' % (field, option[1]), value)
+            elif len(option) > 2:
                 return ('%s%s' % (field, option[1]), option[2])
-            elif field_type == 'ArrayField':
+            elif field_type == 'ArrayField' and '__len' not in option[1]:
                 return ('%s%s' % (field, option[1]), [value])
             else:
                 return ('%s%s' % (field, option[1]), re.sub(option[0], '\\1', value))
@@ -105,7 +121,7 @@ def getRelatedFieldType(model, field):
         related_fields = related_model.get_fields()
     if '__' in field and field.split('__')[1] in related_fields:
         field_type = related_fields[field.split('__')[1]]
-        if field_type != 'ForeignKey':
+        if field_type not in ['ForeignKey', 'ManyToManyField']:
             return field_type
         else:
             return getRelatedFieldType(related_model, '__'.join(field.split('__')[1:]))
@@ -116,7 +132,9 @@ def getRelatedFieldType(model, field):
 def getFieldFilters(queryDict, model_instance, type):
     model_fields = model_instance.get_fields()
     query = Q()
+    additional_queries = []
     query_tuple = None
+    m2m_list = []
     for field in queryDict:
         if field == 'project':
             # project used to be in the list below and I have removed it because
@@ -129,12 +147,14 @@ def getFieldFilters(queryDict, model_instance, type):
                 field_type = model_fields[field.split('__')[0]]
             else:
                 field_type = None
-            if field_type == 'ForeignKey':
+            if field_type == 'ForeignKey' or field_type == 'ManyToManyField':
+                m2m_list.append(field.split('__')[0])
                 field_type = getRelatedFieldType(model_instance, field)
             value_list = queryDict[field]
             # we do not support negation with OR so these are only done when we are filtering
             # I just don't think or-ing negatives on the same field key makes any sense
-            for value in value_list:
+            for i, value in enumerate(value_list):
+                # these are the OR fields
                 if ',' in value:
                     if type == 'filter':
                         subquery = Q()
@@ -146,15 +166,21 @@ def getFieldFilters(queryDict, model_instance, type):
                                     query_tuple = None
                         query &= subquery
                 else:
+                    # these are the AND fields
                     if value != '':
                         if type == 'exclude' and value[0] == '!':
                             query_tuple = getQueryTuple(field_type, field, value[1:])
                         elif type == 'filter' and value[0] != '!':
                             query_tuple = getQueryTuple(field_type, field, value)
-                        if query_tuple:
+                        if query_tuple and (i == 0 or field.split('__')[0] not in m2m_list):
                             query &= Q(query_tuple)
                             query_tuple = None
-    return query
+                        elif query_tuple:
+                            additional_queries.append(Q(query_tuple))
+
+    queries = [query]
+    queries.extend(additional_queries)
+    return queries
 
 
 class SelectPagePaginator(LimitOffsetPagination):
@@ -235,9 +261,15 @@ class ItemList(generics.ListAPIView):
 
         requestQuery = dict(self.request.GET)
 
-        filter_query = getFieldFilters(requestQuery, target, 'filter')
-        exclude_query = getFieldFilters(requestQuery, target, 'exclude')
-        hits = hits.exclude(exclude_query).filter(filter_query).distinct()
+        filter_queries = getFieldFilters(requestQuery, target, 'filter')
+        exclude_queries = getFieldFilters(requestQuery, target, 'exclude')
+        hits = hits.exclude(exclude_queries[0]).filter(filter_queries[0]).distinct()
+        if len(filter_queries) > 1:
+            for query in filter_queries[1:]:
+                hits = hits.filter(query)
+        if len(exclude_queries) > 1:
+            for query in exclude_queries[1:]:
+                hits = hits.exclude(query)
 
         # override fields if required - only used for internal calls from other apps
         if fields:
