@@ -65,7 +65,7 @@ var api = (function (){
       if (document.cookie && document.cookie != '') {
           cookies = document.cookie.split(';');
           for (let i = 0; i < cookies.length; i+=1) {
-              cookie = $.trim(cookies[i]);
+              cookie = cookies[i].trim();
               // Does this cookie string begin with the name we want?
               if (cookie.indexOf('csrftoken=') === 0) {
                   cookieValue = decodeURIComponent(cookie.substring(10));
