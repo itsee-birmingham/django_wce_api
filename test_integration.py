@@ -65,10 +65,10 @@ class APIPostTests(APITestCase):
         self.assertEqual(response.status_code, 403)
 
         # now login
-        user = self.addCitationManagerUser({'username': 'testuser', 'password': 'xyz'})
+        user = self.addCitationManagerUser({'username': 'testuser', 'email': 'testuser@example.com', 'password': 'xyz'})
         self.assertTrue(user.has_perm('citations.add_author'))
         client = APIClient()
-        login = client.login(username='testuser', password='xyz')
+        login = client.login(username='testuser@example.com', password='xyz')
         self.assertEqual(login, True)
 
         response = client.post('%screate' % self.base_url.format('citations', 'author'), json.dumps(a1_data), content_type='application/json')
@@ -94,10 +94,10 @@ class APIPostTests(APITestCase):
         self.assertEqual(response.status_code, 403)
 
         # now login
-        user = self.addCitationManagerUser({'username': 'testuser', 'password': 'xyz'})
+        user = self.addCitationManagerUser({'username': 'testuser', 'email': 'testuser@example.com', 'password': 'xyz'})
         self.assertTrue(user.has_perm('citations.add_author'))
         client = APIClient()
-        login = client.login(username='testuser', password='xyz')
+        login = client.login(username='testuser@example.com', password='xyz')
         self.assertEqual(login, True)
 
         response = client.patch('%supdate/%s' % (self.base_url.format('citations', 'author'), a1.id), json.dumps({'full_name': 'My new name'}), content_type='application/json')
@@ -114,7 +114,7 @@ class APIPostTests(APITestCase):
         authors = models.Author.objects.all()
         self.assertTrue(len(authors) == 1)
         self.assertEqual(authors[0].full_name, 'My new name')
-        self.assertEqual(authors[0].last_modified_by, 'testuser')
+        self.assertEqual(authors[0].last_modified_by, 'testuser@example.com')
 
     def test_PUTAuthorNoChange(self):
         # make an author to modify
@@ -148,10 +148,10 @@ class APIPostTests(APITestCase):
         response = self.client.get(self.base_url.format('citations', 'author', a1.id))
         response_json = json.loads(response.content.decode('utf8'))
 
-        user = self.addCitationManagerUser({'username': 'testuser', 'password': 'xyz'})
+        user = self.addCitationManagerUser({'username': 'testuser', 'email': 'testuser@example.com', 'password': 'xyz'})
         self.assertTrue(user.has_perm('citations.add_author'))
         client = APIClient()
-        login = client.login(username='testuser', password='xyz')
+        login = client.login(username='testuser@example.com', password='xyz')
         self.assertEqual(login, True)
         a1_data['id'] = a1.id
         response = client.put('%supdate/%s' % (self.base_url.format('citations', 'author'), a1.id), json.dumps(response_json['results'][0]), content_type='application/json')
@@ -196,10 +196,10 @@ class APIPostTests(APITestCase):
         response_json = json.loads(response.content.decode('utf8'))
         response_json['results'][0]['full_name'] = 'My new name'
 
-        user = self.addCitationManagerUser({'username': 'testuser', 'password': 'xyz'})
+        user = self.addCitationManagerUser({'username': 'testuser', 'email': 'testuser@example.com', 'password': 'xyz'})
         self.assertTrue(user.has_perm('citations.add_author'))
         client = APIClient()
-        login = client.login(username='testuser', password='xyz')
+        login = client.login(username='testuser@example.com', password='xyz')
         self.assertEqual(login, True)
         a1_data['id'] = a1.id
         response = client.put('%supdate/%s' % (self.base_url.format('citations', 'author'), a1.id), json.dumps(response_json['results'][0]), content_type='application/json')
@@ -208,5 +208,5 @@ class APIPostTests(APITestCase):
         authors = models.Author.objects.all()
         self.assertTrue(len(authors) == 1)
         self.assertEqual(authors[0].full_name, 'My new name')
-        self.assertEqual(authors[0].last_modified_by, 'testuser')
+        self.assertEqual(authors[0].last_modified_by, 'testuser@example.com')
         self.assertNotEqual(authors[0].last_modified_time, None)

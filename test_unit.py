@@ -89,6 +89,7 @@ class APIHelperTests(TestCase):
         # positive value in filter mode
         expected_query = Q()
         expected_query &= Q(('abbreviation__startswith', 'T'))
+        expected_query = [expected_query]
         request = rf.get('/api/citations/author?abbreviation=T*')
         requestQuery = dict(request.GET)
         query = views.getFieldFilters(requestQuery, models.Author, 'filter')
@@ -97,6 +98,7 @@ class APIHelperTests(TestCase):
         # negative value in exclude mode
         expected_query = Q()
         expected_query &= Q(('abbreviation__startswith', 'T'))
+        expected_query = [expected_query]
         request = rf.get('/api/citations/author?abbreviation=!T*')
         requestQuery = dict(request.GET)
         query = views.getFieldFilters(requestQuery, models.Author, 'exclude')
@@ -104,6 +106,7 @@ class APIHelperTests(TestCase):
 
         # negative value in filter mode - which should return an empty query
         expected_query = Q()
+        expected_query = [expected_query]
         request = rf.get('/api/citations/author?abbreviation=!T*')
         requestQuery = dict(request.GET)
         query = views.getFieldFilters(requestQuery, models.Author, 'filter')
@@ -115,6 +118,7 @@ class APIHelperTests(TestCase):
         subquery |= Q(('abbreviation', 'TA1'))
         subquery |= Q(('abbreviation', 'TA2'))
         expected_query &= subquery
+        expected_query = [expected_query]
         request = rf.get('/api/citations/author?abbreviation=TA1,TA2')
         requestQuery = dict(request.GET)
         query = views.getFieldFilters(requestQuery, models.Author, 'filter')
@@ -123,6 +127,7 @@ class APIHelperTests(TestCase):
         # positive value in filter mode with foreign key
         expected_query = Q()
         expected_query &= Q(('author__abbreviation__startswith', 'T'))
+        expected_query = [expected_query]
         request = rf.get('/api/citations/work/?author__abbreviation=T*')
         requestQuery = dict(request.GET)
         query = views.getFieldFilters(requestQuery, models.Work, 'filter')
@@ -132,6 +137,7 @@ class APIHelperTests(TestCase):
         # should produce empty query so it does not stop results returning
         expected_query = Q()
         expected_query &= Q()
+        expected_query = [expected_query]
         request = rf.get('/api/citations/work/?nonsense=T*')
         requestQuery = dict(request.GET)
         query = views.getFieldFilters(requestQuery, models.Work, 'filter')

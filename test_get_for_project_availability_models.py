@@ -112,11 +112,11 @@ class MyAPITestCase(TestCase):
                    }
         self.t2 = transcription_models.Transcription.objects.create(**t2_data)
 
-        self.u1 = self.add_user({'username': 'User1', 'password': 'secret'})
-        self.u2 = self.add_user({'username': 'User2', 'password': 'secret'})
-        self.u3 = self.add_user({'username': 'User3', 'password': 'secret'})
-        self.u4 = self.add_user({'username': 'User4', 'password': 'secret'})
-        self.u5 = self.add_collation_superuser({'username': 'User5', 'password': 'secret'})
+        self.u1 = self.add_user({'username': 'User1', 'email': 'user1@example.com', 'password': 'secret'})
+        self.u2 = self.add_user({'username': 'User2', 'email': 'user2@example.com', 'password': 'secret'})
+        self.u3 = self.add_user({'username': 'User3', 'email': 'user3@example.com', 'password': 'secret'})
+        self.u4 = self.add_user({'username': 'User4', 'email': 'user4@example.com', 'password': 'secret'})
+        self.u5 = self.add_collation_superuser({'username': 'User5', 'email': 'user5@example.com', 'password': 'secret'})
 
         project1_data = {'identifier': 'ECM_04',
                          'name': 'ECM John',
@@ -126,7 +126,8 @@ class MyAPITestCase(TestCase):
                          'work': self.work4,
                          'managing_editor': self.u1,
                          'basetext': self.t1,
-                         'configuration': {}
+                         'configuration': {},
+                         'public': True
                          }
         self.p1 = collation_models.Project.objects.create(**project1_data)
         self.p1.editors.add(self.u2)
@@ -142,7 +143,8 @@ class MyAPITestCase(TestCase):
                          'work': self.work2,
                          'managing_editor': self.u4,
                          'basetext': self.t2,
-                         'configuration': {}
+                         'configuration': {},
+                         'public': True
                          }
         self.p2 = collation_models.Project.objects.create(**project2_data)
         self.p2.editors.add(self.u3)
@@ -236,12 +238,13 @@ class APIItemListTestsProjectsBadConfiguration(MyAPITestCase):
     def test_error_returned_if_model_availability_project_and_no_project_flag(self):
         self.add_collation_data()
         client = APIClient()
-        login = client.login(username='User2', password='secret')
+        login = client.login(username='user2@example.com', password='secret')
         self.assertEqual(login, True)
         response = client.get(self.base_url.format('citations', 'citation'))
         response_json = json.loads(response.content.decode('utf8'))
         self.assertEqual(response.status_code, 500)
-        self.assertEqual(response_json['message'], 'Internal server error - model configuation incompatible with API (code 10003)')
+        self.assertEqual(response_json['message'],
+                         'Internal server error - model configuation incompatible with API (code 10003)')
 
 
 class APIItemListTestsProjectModels(MyAPITestCase):
@@ -256,7 +259,7 @@ class APIItemListTestsProjectModels(MyAPITestCase):
     def test_get_project_list_returns_400_if_no_project__id_in_request(self):
         self.add_collation_data()
         client = APIClient()
-        login = client.login(username='User2', password='secret')
+        login = client.login(username='user2@example.com', password='secret')
         self.assertEqual(login, True)
         response = client.get(self.base_url.format('collation', 'decision'))
         response_json = json.loads(response.content.decode('utf8'))
@@ -266,7 +269,7 @@ class APIItemListTestsProjectModels(MyAPITestCase):
     def test_get_project_list_returns_decisions_if_user_in_project_users(self):
         self.add_collation_data()
         client = APIClient()
-        login = client.login(username='User2', password='secret')
+        login = client.login(username='user2@example.com', password='secret')
         self.assertEqual(login, True)
         response = client.get('%s?project__id=%s' % (self.base_url.format('collation', 'decision'), self.p1.id))
         response_json = json.loads(response.content.decode('utf8'))
@@ -278,7 +281,7 @@ class APIItemListTestsProjectModels(MyAPITestCase):
     def test_get_project_list_returns_decisions_if_user_in_multiple_projects(self):
         self.add_collation_data()
         client = APIClient()
-        login = client.login(username='User3', password='secret')
+        login = client.login(username='user3@example.com', password='secret')
         self.assertEqual(login, True)
         response = client.get('%s?project__id=%s' % (self.base_url.format('collation', 'decision'), self.p1.id))
         response_json = json.loads(response.content.decode('utf8'))
@@ -290,7 +293,7 @@ class APIItemListTestsProjectModels(MyAPITestCase):
     def test_get_project_list_returns_no_decisions_if_user_not_in_projects(self):
         self.add_collation_data()
         client = APIClient()
-        login = client.login(username='User4', password='secret')
+        login = client.login(username='user4@example.com', password='secret')
         self.assertEqual(login, True)
         response = client.get('%s?project__id=%s' % (self.base_url.format('collation', 'decision'), self.p1.id))
         response_json = json.loads(response.content.decode('utf8'))
@@ -302,7 +305,7 @@ class APIItemListTestsProjectModels(MyAPITestCase):
     def test_get_project_list_returns_all_decisions_if_user_is_superuser_but_not_in_requested_project(self):
         self.add_collation_data()
         client = APIClient()
-        login = client.login(username='User5', password='secret')
+        login = client.login(username='user5@example.com', password='secret')
         self.assertEqual(login, True)
         response = client.get('%s?project__id=%s' % (self.base_url.format('collation', 'decision'), self.p1.id))
         response_json = json.loads(response.content.decode('utf8'))

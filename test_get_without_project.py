@@ -121,10 +121,10 @@ class MyAPITestCase(TestCase):
         self.t2 = transcription_models.Transcription.objects.create(**t2_data)
 
         # add users
-        self.u1 = self.add_user({'username': 'User1', 'password': 'secret'})
-        self.u2 = self.add_user({'username': 'User2', 'password': 'secret'})
-        self.u3 = self.add_transcriptions_superuser({'username': 'User3', 'password': 'secret'})
-        self.u4 = self.add_user({'username': 'User4', 'password': 'secret'})
+        self.u1 = self.add_user({'username': 'User1', 'email': 'user1@example.com', 'password': 'secret'})
+        self.u2 = self.add_user({'username': 'User2', 'email': 'user2@example.com', 'password': 'secret'})
+        self.u3 = self.add_transcriptions_superuser({'username': 'User3', 'email': 'user3@example.com', 'password': 'secret'})
+        self.u4 = self.add_user({'username': 'User4', 'email': 'user4@example.com', 'password': 'secret'})
 
         t3_data = {'identifier': 'NT_GRC_03_John',
                    'corpus': self.corpus,
@@ -285,7 +285,7 @@ class APIItemListTestsPublicOrUserModels(MyAPITestCase):
     def test_get_restricted_list_returns_public_and_owned_for_logged_in_regular_user(self):
         self.add_transcription_data()
         client = APIClient()
-        login = client.login(username='User2', password='secret')
+        login = client.login(username='user2@example.com', password='secret')
         self.assertEqual(login, True)
         response = client.get(self.base_url.format('transcriptions', 'transcription'))
         response_json = json.loads(response.content.decode('utf8'))
@@ -298,7 +298,7 @@ class APIItemListTestsPublicOrUserModels(MyAPITestCase):
     def test_get_restricted_list_returns_public_only_for_logged_in_regular_user_if_no_owned(self):
         self.add_transcription_data()
         client = APIClient()
-        login = client.login(username='User4', password='secret')
+        login = client.login(username='user4@example.com', password='secret')
         self.assertEqual(login, True)
         response = client.get(self.base_url.format('transcriptions', 'transcription'))
         response_json = json.loads(response.content.decode('utf8'))
@@ -310,7 +310,7 @@ class APIItemListTestsPublicOrUserModels(MyAPITestCase):
     def test_get_restricted_list_returns_all_for_app_superuser(self):
         self.add_transcription_data()
         client = APIClient()
-        login = client.login(username='User3', password='secret')
+        login = client.login(username='user3@example.com', password='secret')
         self.assertEqual(login, True)
         response = client.get(self.base_url.format('transcriptions', 'transcription'))
         response_json = json.loads(response.content.decode('utf8'))
@@ -351,7 +351,7 @@ class APIItemDetailTestsPublicOrUserModels(MyAPITestCase):
 
     def test_public_item_returned_for_logged_in_user(self):
         client = APIClient()
-        login = client.login(username='User1', password='secret')
+        login = client.login(username='user1@example.com', password='secret')
         self.assertEqual(login, True)
         response = client.get(self.base_url.format('transcriptions', 'transcription', self.t1.id))
         response_json = json.loads(response.content.decode('utf8'))
@@ -360,7 +360,7 @@ class APIItemDetailTestsPublicOrUserModels(MyAPITestCase):
 
     def test_private_item_returned_for_logged_in_user_if_owner(self):
         client = APIClient()
-        login = client.login(username='User1', password='secret')
+        login = client.login(username='user1@example.com', password='secret')
         self.assertEqual(login, True)
         response = client.get(self.base_url.format('transcriptions', 'transcription', self.t3.id))
         response_json = json.loads(response.content.decode('utf8'))
@@ -371,7 +371,7 @@ class APIItemDetailTestsPublicOrUserModels(MyAPITestCase):
         # ideally this would return 403 but the filtering we use for item level permissions
         # means it doesn't get found
         client = APIClient()
-        login = client.login(username='User1', password='secret')
+        login = client.login(username='user1@example.com', password='secret')
         self.assertEqual(login, True)
         response = client.get(self.base_url.format('transcriptions', 'transcription', self.t4.id))
         response_json = json.loads(response.content.decode('utf8'))
@@ -379,7 +379,7 @@ class APIItemDetailTestsPublicOrUserModels(MyAPITestCase):
 
     def test_404_returned_if_no_item_for_logged_in_user(self):
         client = APIClient()
-        login = client.login(username='User1', password='secret')
+        login = client.login(username='user1@example.com', password='secret')
         self.assertEqual(login, True)
         response = client.get(self.base_url.format('transcriptions', 'transcription', 100001))
         response_json = json.loads(response.content.decode('utf8'))
@@ -387,7 +387,7 @@ class APIItemDetailTestsPublicOrUserModels(MyAPITestCase):
 
     def test_public_item_returned_for_logged_in_superuser(self):
         client = APIClient()
-        login = client.login(username='User3', password='secret')
+        login = client.login(username='user3@example.com', password='secret')
         self.assertEqual(login, True)
         response = client.get(self.base_url.format('transcriptions', 'transcription', self.t1.id))
         response_json = json.loads(response.content.decode('utf8'))
@@ -396,7 +396,7 @@ class APIItemDetailTestsPublicOrUserModels(MyAPITestCase):
 
     def test_private_item_returned_for_logged_in_superuser_if_not_owner(self):
         client = APIClient()
-        login = client.login(username='User3', password='secret')
+        login = client.login(username='user3@example.com', password='secret')
         self.assertEqual(login, True)
         response = client.get(self.base_url.format('transcriptions', 'transcription', self.t3.id))
         response_json = json.loads(response.content.decode('utf8'))
@@ -447,7 +447,7 @@ class APIItemListTestsPrivateModels(MyAPITestCase):
     def test_get_private_list_returns_owned_only_for_logged_in_regular_user(self):
         self.add_transcription_data()
         client = APIClient()
-        login = client.login(username='User2', password='secret')
+        login = client.login(username='user2@example.com', password='secret')
         self.assertEqual(login, True)
         response = client.get(self.base_url.format('transcriptions', 'transcription'))
         response_json = json.loads(response.content.decode('utf8'))
@@ -458,7 +458,7 @@ class APIItemListTestsPrivateModels(MyAPITestCase):
     def test_get_private_list_returns_all_for_app_superuser(self):
         self.add_transcription_data()
         client = APIClient()
-        login = client.login(username='User3', password='secret')
+        login = client.login(username='user3@example.com', password='secret')
         self.assertEqual(login, True)
         response = client.get(self.base_url.format('transcriptions', 'transcription'))
         response_json = json.loads(response.content.decode('utf8'))
@@ -500,7 +500,7 @@ class APIItemDetailTestsPrivateModels(MyAPITestCase):
 
     def test_private_item_returned_for_logged_in_user_if_owner(self):
         client = APIClient()
-        login = client.login(username='User1', password='secret')
+        login = client.login(username='user1@example.com', password='secret')
         self.assertEqual(login, True)
         response = client.get(self.base_url.format('transcriptions', 'transcription', self.t3.id))
         response_json = json.loads(response.content.decode('utf8'))
@@ -511,7 +511,7 @@ class APIItemDetailTestsPrivateModels(MyAPITestCase):
     def test_404_returned_for_logged_in_user_if_not_owner(self):
         # ideally this would return 403
         client = APIClient()
-        login = client.login(username='User1', password='secret')
+        login = client.login(username='user1@example.com', password='secret')
         self.assertEqual(login, True)
         response = client.get(self.base_url.format('transcriptions', 'transcription', self.t5.id))
         response_json = json.loads(response.content.decode('utf8'))
@@ -519,7 +519,7 @@ class APIItemDetailTestsPrivateModels(MyAPITestCase):
 
     def test_404_returned_if_no_item_for_logged_in_user(self):
         client = APIClient()
-        login = client.login(username='User1', password='secret')
+        login = client.login(username='user1@example.com', password='secret')
         self.assertEqual(login, True)
         response = client.get(self.base_url.format('transcriptions', 'transcription', 100001))
         response_json = json.loads(response.content.decode('utf8'))
@@ -527,7 +527,7 @@ class APIItemDetailTestsPrivateModels(MyAPITestCase):
 
     def test_private_item_returned_for_logged_in_superuser_if_not_owner(self):
         client = APIClient()
-        login = client.login(username='User3', password='secret')
+        login = client.login(username='user3@example.com', password='secret')
         self.assertEqual(login, True)
         response = client.get(self.base_url.format('transcriptions', 'transcription', self.t3.id))
         response_json = json.loads(response.content.decode('utf8'))
