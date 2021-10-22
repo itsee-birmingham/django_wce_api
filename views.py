@@ -17,7 +17,6 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models.deletion import ProtectedError, Collector
 from django.contrib.admin.utils import NestedObjects
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.decorators import detail_route
 from django.views.decorators.http import etag
 from django.utils.decorators import method_decorator
 from rest_framework.decorators import api_view
