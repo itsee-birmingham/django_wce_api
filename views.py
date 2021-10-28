@@ -24,6 +24,11 @@ from django.http import JsonResponse
 from api.decorators import apply_model_get_restrictions
 
 
+def get_user(request):
+    serializer = UserSerializer(request.user)
+    return JsonResponse(serializer.data)
+
+
 def get_etag(request, app=None, model=None, pk=None):
     try:
         etag = str(apps.get_model(app, model).objects.get(pk=pk).version_number)
@@ -32,13 +37,13 @@ def get_etag(request, app=None, model=None, pk=None):
         return "*"
 
 
-def _getCount(queryset):
+def getCount(queryset):
     """
     Determine an object count, supporting either querysets or regular lists.
     """
     try:
         return queryset.count()
-    except (AttributeError, TypeError):
+    except TypeError:
         return len(queryset)
 
 
@@ -191,7 +196,7 @@ class SelectPagePaginator(LimitOffsetPagination):
             return None
 
         self.offset = self.get_offset(request)
-        self.count = _getCount(queryset)
+        self.count = getCount(queryset)
 
         if index_required is not None:
             page = int(index_required/self.limit)
@@ -205,11 +210,6 @@ class SelectPagePaginator(LimitOffsetPagination):
             return []
 
         return (list(queryset[self.offset:self.offset + self.limit]), self.offset)
-
-
-def getUser(request):
-    serializer = UserSerializer(request.user)
-    return JsonResponse(serializer.data)
 
 
 """
@@ -233,7 +233,7 @@ class ItemList(generics.ListAPIView):
         try:
             serializer_name = target.SERIALIZER
             serializer = getattr(importlib.import_module('%s.serializers' % self.kwargs['app']), serializer_name)
-        except Exception:
+        except ModuleNotFoundError:
             serializer = SimpleSerializer
         return serializer
 

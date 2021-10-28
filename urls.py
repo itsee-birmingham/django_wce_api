@@ -2,7 +2,7 @@ from django.conf.urls import re_path
 from api import views
 
 urlpatterns = [
-    re_path(r'whoami', views.getUser),
+    re_path(r'whoami', views.get_user),
     re_path(r'^(?P<app>[a-z_]+)/(?P<model>[a-z_]+)/create/?$', views.ItemCreate.as_view()),
     re_path(r'^(?P<app>[a-z_]+)/(?P<model>[a-z_]+)/update/(?P<pk>[0-9_a-zA-Z]+)/?$', views.ItemUpdate.as_view()),
     re_path(r'^(?P<app>[a-z_]+)/(?P<model>[a-z_]+)/delete/(?P<pk>[0-9_a-zA-Z]+)/?$', views.ItemDelete.as_view()),
