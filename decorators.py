@@ -76,7 +76,7 @@ def apply_model_get_restrictions(function):
             query = Q()
             query |= Q(('public', True))
             for field in user_fields:
-                query_tuple = api_views.getQueryTuple(user_fields[field], field, request.user)
+                query_tuple = api_views.get_query_tuple(user_fields[field], field, request.user)
                 query |= Q(('project__%s' % (query_tuple[0]), query_tuple[1]))
             kwargs['supplied_filter'] = query
             return function(request, *args, **kwargs)
@@ -109,7 +109,7 @@ def apply_model_get_restrictions(function):
 
             query = Q()
             for field in user_fields:
-                query_tuple = api_views.getQueryTuple(user_fields[field], field, request.user)
+                query_tuple = api_views.get_query_tuple(user_fields[field], field, request.user)
                 query |= Q(('project__%s' % (query_tuple[0]), query_tuple[1]))
             kwargs['supplied_filter'] = query
             return function(request, *args, **kwargs)
@@ -138,9 +138,9 @@ def apply_model_get_restrictions(function):
             user_fields = project_model.get_user_fields()
 
             # first add the user as a field since this is project_or_user
-            query = Q(api_views.getQueryTuple('ForeignKey', 'user', request.user))
+            query = Q(api_views.get_query_tuple('ForeignKey', 'user', request.user))
             for field in user_fields:
-                query_tuple = api_views.getQueryTuple(user_fields[field], field, request.user)
+                query_tuple = api_views.get_query_tuple(user_fields[field], field, request.user)
                 query |= Q(('project__%s' % (query_tuple[0]), query_tuple[1]))
 
             kwargs['supplied_filter'] = query
