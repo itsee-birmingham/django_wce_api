@@ -25,10 +25,11 @@ def apply_model_get_restrictions(function):
 
         # if we get this far we are looking either for a list or a single item which
         # does exist (even if permissions mean we can't view it)
-        try:
-            availability = target.AVAILABILITY
-        except:
-            # TODO: consider the most sensible default.
+
+        availability = target.AVAILABILITY
+
+        if availability is None:
+            # this is the safest default
             availability = 'private'
 
         if availability == 'public':
@@ -47,7 +48,7 @@ def apply_model_get_restrictions(function):
             # this is for mixed tables like transcriptions and verses
             # All hybrid public models need a 'public' entry in the schema
             # return server error if not
-            if 'public' not in target.get_fields() or 'project__id' not in request.GET:
+            if 'public' not in target.get_fields() or 'project' not in target.get_fields():
                 return JsonResponse(
                         {'message': "Internal server error - model configuation incompatible with API (code 10002)"},
                         status=500
@@ -78,6 +79,7 @@ def apply_model_get_restrictions(function):
             for field in user_fields:
                 query_tuple = api_views.get_query_tuple(user_fields[field], field, request.user)
                 query |= Q(('project__%s' % (query_tuple[0]), query_tuple[1]))
+
             kwargs['supplied_filter'] = query
             return function(request, *args, **kwargs)
 
@@ -188,6 +190,9 @@ def apply_model_get_restrictions(function):
 
         else:
             # just to be sure
-            return JsonResponse({'message': "Permission required"}, status=403)
+            return JsonResponse(
+                    {'message': "Internal server error - model availability incompatible with API (code 10005)"},
+                    status=500
+                    )
 
     return wrap
