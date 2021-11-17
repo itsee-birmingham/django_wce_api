@@ -58,13 +58,11 @@ The citations app has many functions which we may end up extracting and sharing 
 a list of objects in a table and the display of the details of a single object. These views also use model level
 variables and functions including (but perhaps not limited to):
 
--   LIST_FIELDS - ﻿A list of fields to display in the 'list view' of the model. A dictionary can be used if the database field name is different from the column label for display and/or the search string required (for example when searching related models or array fields) keys for dictionary are 'id', 'label' and 'search' respectively. Both 'label' and 'search' will default to 'id' if not provided. If all three values are the same a string can be provided instead of a dictionary.
+- LIST_FIELDS - ﻿A list of fields to display in the 'list view' of the model. A dictionary can be used if the database field name is different from the column label for display and/or the search string required (for example when searching related models or array fields) keys for dictionary are 'id', 'label' and 'search' respectively. Both 'label' and 'search' will default to 'id' if not provided. If all three values are the same a string can be provided instead of a dictionary.
 
--   ITEM_FIELDS - A list of the fields to display when displaying a single item from the database in the order the fields should be shown.
+- ITEM_FIELDS - A list of the fields to display when displaying a single item from the database in the order the fields should be shown.
 
--   get_row_dict() - function required when displaying an item, it gets the metadata for the item fields in an ordered dict (NB this needs better documentation!)
-
--   get_search_fields() - A list of dictionaries containing metadata about the fields appropriate for searches of the data in the model (see citations app for structure and code example). Used in an ajax call on the search page to get the fields relevant for searching each model. This will sometimes include relations from other models (again there are examples in the citations app).
+- get_search_fields() - A list of dictionaries containing metadata about the fields appropriate for searches of the data in the model (see citations app for structure and code example). Used in an ajax call on the search page to get the fields relevant for searching each model. This will sometimes include relations from other models (again there are examples in the citations app).
 
 ## The api base serializer
 
