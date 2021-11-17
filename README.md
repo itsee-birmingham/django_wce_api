@@ -1,47 +1,62 @@
 # The api app
 
-The api app underlies everything else in the ITSEE Django implementation.
+The api app underlies everything else in the Workspace for Collaborative Editing Django implementation.
 
-It uses Django Rest Framework to handle the serialisation needed for the api used internally and externally. In order to get the most use out of the code the views in other apps which handle the retrieval and display of data (and I guess if we ever do it create and update data) also call the api app. It also handles all serialisation using Django rest framework.
+The api is used internally in the Django application and can also be used externally. It uses Django Rest Framework to
+handle serialisation. The views in other apps which handle the retrieval and display of data as well as data changes
+also call the api app either through the api or directly by using the functions in views.py
 
 ## Base model inheritance
 
-The api has an abstract model called BaseModel which inherits from the Model class from diango.db.models. It adds the fields that the api application expects to be present in all models it tries to save which are the meta data fields:
+The api has an abstract model called BaseModel which inherits from the diango.db.models Model class. It adds the
+fields which the api application expects to be present in all models it tries to save. These are the following meta data
+fields:
 
 -   created_time
 -   created_by
 -   last_modified_time
 -   last_modified_by
+-   version_number
 
-All models in all apps which intend to use the api model for creating and saving models **must** be based on this abstract model and not the one from Django unless the model itself includes these four fields.
+All models in apps which intend to use the api model for creating and saving models **must** be based on this abstract
+model rather than the one provided by Django, unless the model itself includes all of the fields specified above.
 
-I would like to specify abstract methods (and variables) which are required by all classes inheriting from this but I have found no way to do that.
+To work with all of the functions of the api app each model must include the following variables or functions (not all
+are required for all functions):
 
-To work with all of the functions of the api app each model must include the following variables or functions (not all are required for all functions):
+- AVAILABILITY - a string which determines the availability of the model through the api (see below on decorators for
+  supported values)
 
-- AVAILABILITY - a string which determines the availability of the model through the api (see below on decorators for currently supported values)
+- SERIALIZER - a string containing the class name of the serializer for this model. The serializer itself should be
+  added to the serializers.py file for the app (see section on api serializers)
 
--   SERIALIZER - a string containing the classname of the serializer for this model which will have been added to the serializers.py file for the app (see section on api serializers)
+- REQUIRED_FIELDS - a list of the fields required when creating an object using the api. This should be the list of
+  minimum fields required for the object to be created.
 
--   REQUIRED_FIELDS - a list of the fields required when creating an object using the api. This should be the list of minimum fields required for the object to be created.
+- get_serialization_fields() - a function that returns the fields that will be included in the serialization by default
+  (unless specific fields are given in the request).
 
--   get_serialization_fields() - the fields that will be included in the serialization by default (unless specific fields are given in the request). In all working examples this is all fields. I am not sure if it can be a subset or not, if it is used for creation as well as getting then it may be that it always has to be all of the fields.
+- get_fields() - a function that returns a dictionary with field names as keys and fields type as the data. This is
+  used in serialization and display to determine what the field type is and therefore how to go about interacting with it.
 
--   get_fields() - returns a dictionary with field names as keys and fields type as the data. This is used in serialization and (I think) display to determine what the field type is and therefore how to go about serializing it.
 
 Other things which can be useful to specify are the standard Django things such as:
 
--   \_\_str\_\_() - the string representation of the object, useful for display purposes but note that there can only be one
+- \_\_str\_\_() - the string representation of the object, useful for display purposes but note that there can only be
+  one
 
--   ordering - variable in class Meta: in the model which specified the default order to return the objects in, this can be a list of fields so precise ordering can be established.
+- ordering - a variable in the Meta class in the model which specifies the default order for returning objects.
 
-For efficiency of SQL calls it is also recommended to add the following variables to any models that require them:
+To make the SQL calls more efficient the following variables should be provided on any models that require them:
 
--   RELATED_KEYS - A list of all fields that are foreign keys in this model
+- RELATED_KEYS - A list of all fields that are foreign keys in this model.
 
--   PREFETCH_KEYS - A list of all of the many-to-many or one-to-many keys in this model ﻿(these may be declared with a foreign key in the related model only)
+- PREFETCH_KEYS - A list of all of the many-to-many or one-to-many keys in this model ﻿(these might be declared with a
+  foreign key in the related model only).
 
-The citations app has many functions which we may end up extracting and sharing with other apps such as the display of a list of objects in a table and the display of the details of a single object. These views also use model level variables and functions including (but perhaps not limited to):
+The citations app has many functions which we may end up extracting and sharing with other apps such as the display of
+a list of objects in a table and the display of the details of a single object. These views also use model level
+variables and functions including (but perhaps not limited to):
 
 -   LIST_FIELDS - ﻿A list of fields to display in the 'list view' of the model. A dictionary can be used if the database field name is different from the column label for display and/or the search string required (for example when searching related models or array fields) keys for dictionary are 'id', 'label' and 'search' respectively. Both 'label' and 'search' will default to 'id' if not provided. If all three values are the same a string can be provided instead of a dictionary.
 
@@ -59,7 +74,7 @@ There is a SimpleSerializer which I had hoped would be somewhat generic and remo
 
 The BaseModelSerializer is the one we use, it takes the rest\_framework.serializers.ModelSerializer and makes it more flexible by allowing the specification of data in the \_\_init\_\_ function. This was done specifically to allow the desired fields to be specified to restrict the size of the data being returned on serialization when necessary.
 
-Each model still needs to specify a serializer in a serializers.py file in the app directory, the location is important so that the serializer can be found. The serializer must inherit BaseModelSerializer and can be as a minimum the following (for the Author model in the citations app):
+Each model still needs to specify a serializer in a serializers.py file in the app directory, the location is important so that the serializer can be found. The serializer must inherit BaseModelSerializer and can be as a minimum the following:
 
 ```python
 class AuthorSerializer(api_serializers.BaseModelSerializer):
