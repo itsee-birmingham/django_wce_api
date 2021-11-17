@@ -1,15 +1,15 @@
-# The api app
+# The API App
 
-The api app underlies everything else in the Workspace for Collaborative Editing Django implementation.
+The API app underlies everything else in the Workspace for Collaborative Editing Django implementation.
 
-The api is used internally in the Django application and can also be used externally. It uses Django Rest Framework to
+The API is used internally in the Django application and can also be used externally. It uses Django Rest Framework to
 handle serialisation. The views in other apps which handle the retrieval and display of data as well as data changes
-also call the api app either through the api or directly by using the functions in views.py
+also call the API app either through the api or directly by using the functions in views.py
 
-## Base model inheritance
+## BaseModel Inheritance
 
-The api has an abstract model called BaseModel which inherits from the diango.db.models Model class. It adds the
-fields which the api application expects to be present in all models it tries to save. These are the following meta data
+The API has an abstract model called `BaseModel` which inherits from the `diango.db.models.Model` class. It adds the
+fields which the API application expects to be present in all models it tries to save. These are the following meta data
 fields:
 
 -   created_time
@@ -18,19 +18,19 @@ fields:
 -   last_modified_by
 -   version_number
 
-All models in apps which intend to use the api model for creating and saving models **must** be based on this abstract
+All models in apps which intend to use the API model for creating and saving models **must** be based on this abstract
 model rather than the one provided by Django, unless the model itself includes all of the fields specified above.
 
-To work with all of the functions of the api app each model must include the following variables or functions (not all
+To work with all of the functions of the API app each model must include the following variables or functions (not all
 are required for all functions):
 
-- AVAILABILITY - a string which determines the availability of the model through the api (see below on decorators for
+- AVAILABILITY - a string which determines the availability of the model through the API (see below on decorators for
   supported values)
 
 - SERIALIZER - a string containing the class name of the serializer for this model. The serializer itself should be
-  added to the serializers.py file for the app (see section on api serializers)
+  added to the serializers.py file for the app (see section on API serializers)
 
-- REQUIRED_FIELDS - a list of the fields required when creating an object using the api. This should be the list of
+- REQUIRED_FIELDS - a list of the fields required when creating an object using the API. This should be the list of
   minimum fields required for the object to be created.
 
 - get_serialization_fields() - a function that returns the fields that will be included in the serialization by default
@@ -54,9 +54,9 @@ To make the SQL calls more efficient the following variables should be provided 
 - PREFETCH_KEYS - A list of all of the many-to-many or one-to-many keys in this model ﻿(these might be declared with a
   foreign key in the related model only).
 
-The citations app has many functions which we may end up extracting and sharing with other apps such as the display of
-a list of objects in a table and the display of the details of a single object. These views also use model level
-variables and functions including (but perhaps not limited to):
+REMOVE FOR MUYA
+If the data in the models are going to be displayed in tables or are going to be used for searching then the following
+model variables and function might be useful. This is mostly used in the citations app and some in the catena_catalogue:
 
 - LIST_FIELDS - ﻿A list of fields to display in the 'list view' of the model. A dictionary can be used if the database field name is different from the column label for display and/or the search string required (for example when searching related models or array fields) keys for dictionary are 'id', 'label' and 'search' respectively. Both 'label' and 'search' will default to 'id' if not provided. If all three values are the same a string can be provided instead of a dictionary.
 
@@ -64,15 +64,21 @@ variables and functions including (but perhaps not limited to):
 
 - get_search_fields() - A list of dictionaries containing metadata about the fields appropriate for searches of the data in the model (see citations app for structure and code example). Used in an ajax call on the search page to get the fields relevant for searching each model. This will sometimes include relations from other models (again there are examples in the citations app).
 
-## The api base serializer
+## The API BaseModelSerializer
 
-The api app currently specified two serializers both inheriting from the rest_framework.serializers.ModelSerializer.
+The api app includes two serializers both inheriting from the `rest_framework.serializers.ModelSerializer` class.
 
-There is a SimpleSerializer which I had hoped would be somewhat generic and remove the need to specify a serializer for each model but this did not really work out and once I have investigated any remaining references (as per the TODO in the code) this serializer should be deleted.
+`SimpleSerializer` is only used as a backup if no other serializer is specified. This serializer might be good enough
+for retrieving data in a few scenarios but in the vast majority of cases a specific serializer will need to be provided
+for the model.
 
-The BaseModelSerializer is the one we use, it takes the rest\_framework.serializers.ModelSerializer and makes it more flexible by allowing the specification of data in the \_\_init\_\_ function. This was done specifically to allow the desired fields to be specified to restrict the size of the data being returned on serialization when necessary.
+`BaseModelSerializer` takes the `rest\_framework.serializers.ModelSerializer` and makes it more flexible by allowing the
+specification of data in the `\_\_init\_\_` function. This was done to allow the required fields to be specified. This
+can be important when requesting large numbers of records to control the size of the data returned.
 
-Each model still needs to specify a serializer in a serializers.py file in the app directory, the location is important so that the serializer can be found. The serializer must inherit BaseModelSerializer and can be as a minimum the following:
+Each model needs to specify a serializer in a `serializers.py` file in the app directory; the location is important
+so that the serializer can be found. The serializer must inherit `BaseModelSerializer` and can be very minimal in most
+cases. A simple version is as follows:
 
 ```python
 class AuthorSerializer(api_serializers.BaseModelSerializer):
@@ -80,48 +86,56 @@ class AuthorSerializer(api_serializers.BaseModelSerializer):
     model = models.Author
 ```
 
-If there are many to many fields involved (as with the citation model in the citations app) then a full serializer must be specified. See the code and drf documentation for details. An example in the ITSEE code would be the CitationSerializer
+If there are many to many fields involved then a full serializer must be specified. See the django rest framework
+documentation for details. An example in the ITSEE code is the `CitationSerializer`.
 
-## Post_save signals on BaseModel
+## The API Views
 
-The BaseModel contains the ‘version_number’ field which I plan to use in the ETag in the http header in order to achieve ‘optimistic concurrency control’/’optimistic locking’. The version number is set to 1 after being created and then incremented on each save. It is worth implementing as a post_save signal as it will basically apply to all models. Because it applies to all models that inherit BaseModel (which should end up being all of them) I am putting the code in the api app. It is in the signals.py file in the api app. In order to add the post_save signal to any models inheriting BaseModel **each app** that needs the post save hooks must add the following in the apps.py file in the [appname]Config class after the name variable is set and this function:
+The API app provides views for getting, creating, updating, deleting and searching items in the database both through
+the Django rest framework serialisations and directly with the Django objects. The views are based on those provided by
+`rest_framework.generics` which each of the classes in the `views.py` file inherits. However, they have been made them
+more flexible so that a single view can be used with any model and with a range of additional arguments which are
+typically stored in the models themselves. The models must contain certain information in order to work with the API
+views. This is detailed in the section on the API BaseModel.
 
-```python
-﻿def ready(self):
-  import api.signals
-```
+The views can be used directly or through AJAX using the functions in `api.js`.
 
-Everything should then just take care of itself.
+## JavaScript
 
-**TODO:** it might also be worth moving the created and last_modified data into this post save hook rather than handling them in the ItemUpdate/ItemCreate views in the api app.
+The JavaScript file, `api.js`, has both callback based functions and promise based functions to access the API. Any new
+code should ideally be written using the promise based functions which all have function names which end in 'promise'.
+The other functions remain for legacy support for apps that existed before JavaScript promises were standardised.
+
+## API Decorators
+
+The decorators use the AVAILABILITY setting on the models to control access to the data through the API. It only
+concerns GET requests because write permissions are controlled using other Django mechanisms and always require the
+user to be logged in. In all cases a member of the group [appname]\_superusers, if implemented, can see all data from
+that app.  Supported values for AVAILABILITY and their definitions are as follows:
+
+- **public** - All instances of the model are available to anyone.
+- **private** - Only the owner can see it. Models with this availability setting must have a user field.
+- **logged_in** - All instances of the model are available to anyone who is logged in.
+- **project** - Only logged in people who are members of the project specified in the data request can see it. A project id must be supplied in the request for this to work (note the project must be in the same app - an extension will be required for the project to be in a different app at some point).
+- **public_or_project** - If the public field in the instance is set to True the instance is available to anyone, if not it behaves as project above. Models with this availability setting must have a public field.
+- **public_or_user** - If the public field in the instance is set to True the instance is available to anyone, otherwise it behaves as private above. Models with this availability setting must have a public field and a user field.
+
+If a model does not specify its availability it will be assumed to be private.
 
 
-## The api views
+## Using the API
 
-As explained above the api app provides views for getting, creating updating and searching items in the database both through the drf serialisation and for other views in python that are dealing directly with Django objects (should they choose to use it - the citations app does for example). The views are based on the views for listing items, retrieving a single item and updating and creating items provided by rest_framework.generics which each of the classes in the views.py file inherits. However, I have made them more flexible so that a single view can be used with any model and with a range of additional arguments which are typically stored in the models themselves. The models must contain certain information in order to work with the api views. This is detailed in the section on the api Base Model.
+### Data List
 
-The views can be used directly or through ajax using the functions in api.js int he static folder for the api app.
+### Single Item
 
-## api.js
 
-The api.js has both callback based functions and promise based functions. This is largely because I did not know about promises/they were not standardised when some of this code was written. Any new code should ideally be written using the promise based functions which all have function names which end in 'promise'. I have not been able to use them all of the time (probably due to a still incomplete understanding) and have not yet gone back through older code such as the citations app to refactor the js to use promises only.
-
-## api decorators
-
-The decorators use the AVAILABILITY setting on the models to determine how availbale they are through the api. It only concerns GET requests at present (although we may want to extend it later) as write permissions are controlled using Django mechanisms and always require the user to be logged in. Supported values for AVAILABILITY and their definitions are as follows:
-
-- public - all instances of the model are available to anyone
-- private - only the owner of a superuser can see it
-- logged_in - all instances of the model are available to anyone who is logged in
-- project - only logged in people who are members of the project specified in the data request can see it. A project id must be supplied in the request for this to work (note the project must be in the same app - an extension will be required for the project to be in a different app at some point)
-- public_or_project - if the public field in the instance is set to True the instance is available to anyone, if not it behaves as project above.
-- public_or_user - if the public field in the instance is set to True the instance is available to anyone, otherwise it behaves as private above.
-
-Any field which is public_or_... must include a public field in the model.
-If a model does not specify its availability it will be assumed that it is private.
-
-This feature is still very much under development and there are probably lots of improvements to be made. It may even be that we can find a django plugin that would do this but when I looked I could not find one that did what I wanted and was still maintained.
-
-## searches through api
+### Searching
 
 Write the documentation for this.
+
+
+## Tests
+
+The tests for the API are in a separate Django app called `api_tests` as there are no models that can be used for
+testing in the API itself. Testing documentation is available in the `api_tests` app.

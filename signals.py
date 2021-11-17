@@ -27,7 +27,7 @@ def increment_version(sender, instance, created, **kwargs):
     # we can't save in a post_save or we get stuck in a recursion nightmare
     # Lots of places online say disconnect and reconnect the signal around the
     # save call but that felt wrong to me so I am using update instead of save
-    # which does not triger the post_save signal
+    # which does not trigger the post_save signal
     sender.objects.filter(id=instance.id).update(version_number=version_number)
 
 
