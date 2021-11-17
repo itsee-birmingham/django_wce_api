@@ -235,7 +235,7 @@ class ItemList(generics.ListAPIView):
         try:
             serializer_name = target.SERIALIZER
             serializer = getattr(importlib.import_module('%s.serializers' % self.kwargs['app']), serializer_name)
-        except ModuleNotFoundError:
+        except Exception:
             serializer = SimpleSerializer
         return serializer
 

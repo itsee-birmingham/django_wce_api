@@ -2,7 +2,6 @@ from rest_framework import serializers
 from django.apps import apps
 
 
-# TODO: check why we are using this in api.views?
 class SimpleSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -10,7 +9,6 @@ class SimpleSerializer(serializers.ModelSerializer):
         fields = ()
 
     def __init__(self, instance=None, fields=None, context=None, data=None):
-
         if instance:
             if isinstance(instance, list):
                 self.Meta.model = type(instance[0])
