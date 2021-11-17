@@ -26,7 +26,10 @@ def apply_model_get_restrictions(function):
         # if we get this far we are looking either for a list or a single item which
         # does exist (even if permissions mean we can't view it)
 
-        availability = target.AVAILABILITY
+        try:
+            availability = target.AVAILABILITY
+        except AttributeError:
+            availability = 'private'
 
         if availability is None:
             # this is the safest default
