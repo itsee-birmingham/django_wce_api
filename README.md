@@ -210,6 +210,11 @@ the API code.
 The main functions available are described below. Create, update and delete functions require the correct model
 permissions to be set in the Django admin interface.
 
+- #### setupAjax()
+
+A useful setup function that can be run if the JavaScript functions are to be used. It ensures that the csrf token is
+added to any AJAX calls which require it.
+
 - #### getCurrentUserPromise()
 
 Returns the details of the logged in user.
