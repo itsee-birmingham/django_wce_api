@@ -2,7 +2,7 @@
 
 The API app underlies everything else in the Workspace for Collaborative Editing Django implementation.
 
-The API is used internally in the Django application and can also be used externally. It uses Django Rest Framework to
+The API is used internally in the Django application and can also be used externally. It uses Django REST Framework to
 handle serialisation. The views in other apps which handle the retrieval and display of data as well as data changes
 also call the API app either through the api or directly by using the functions in views.py
 
@@ -86,25 +86,8 @@ class AuthorSerializer(api_serializers.BaseModelSerializer):
     model = models.Author
 ```
 
-If there are many to many fields involved then a full serializer must be specified. See the django rest framework
+If there are many to many fields involved then a full serializer must be specified. See the Django REST Framework
 documentation for details. An example in the ITSEE code is the `CitationSerializer`.
-
-## The API Views
-
-The API app provides views for getting, creating, updating, deleting and searching items in the database both through
-the Django rest framework serialisations and directly with the Django objects. The views are based on those provided by
-`rest_framework.generics` which each of the classes in the `views.py` file inherits. However, they have been made them
-more flexible so that a single view can be used with any model and with a range of additional arguments which are
-typically stored in the models themselves. The models must contain certain information in order to work with the API
-views. This is detailed in the section on the API BaseModel.
-
-The views can be used directly or through AJAX using the functions in `api.js`.
-
-## JavaScript
-
-The JavaScript file, `api.js`, has both callback based functions and promise based functions to access the API. Any new
-code should ideally be written using the promise based functions which all have function names which end in 'promise'.
-The other functions remain for legacy support for apps that existed before JavaScript promises were standardised.
 
 ## API Decorators
 
@@ -122,17 +105,66 @@ that app.  Supported values for AVAILABILITY and their definitions are as follow
 
 If a model does not specify its availability it will be assumed to be private.
 
+## The API Views
+
+The API app provides views for getting, creating, updating, deleting and searching items in the database both through
+the Django REST Framework serialisations and directly with the Django objects. The views are based on those provided by
+`rest_framework.generics` which each of the classes in the `views.py` file inherits. However, they have been made them
+more flexible so that a single view can be used with any model and with a range of additional arguments which are
+typically stored in the models themselves. The models must contain certain information in order to work with the API
+views. This is detailed in the section on the API BaseModel.
+
 
 ## Using the API
 
-### Data List
+The API can be accessed directly via the URL or using AJAX via the JavaScript functions. The views provided in the API app can also be used directly in other views as described below.
 
-### Single Item
+### URL Access
+
+URL access works for all methods but login is required for everything except GET. Only the GET features are explained
+here because for the majority of applications the JavaScript functions should be used for everything else.
+
+#### Base API
+
+The API follow the app and model structure. To return a list of items use the app name and the model name as follows:
+
+[host]/api/[appname]/[modelname]
+
+This will return 100 items by default and provide links to get the next/previous 100 items.
+
+To access an single item use the app name, the model name and the id of the item as follows:
+
+[host]/api/[appname]/[modelname]/[itemid]
+
+As well as the API itself the API app provides view functions that can be used in the views of other apps and returns
+the Django objects so they can be more easily integrated with Django templates. These functions are: `get_objects()` in the `ItemList` class view; and `get_item()` in the `ItemDetail` class view.
+
+#### Options
+
+There are several options that can be used to control the data returned by the API when returning a list of items.
+
+- **_fields** - A list of comma separated fields to return in the data.
+- **_sort** - A list of comma separated fields to use for sorting. A - can be added before a field name to reverse the
+  direction.
+- **limit** - The number of items to return (when returning large number of items the \_fields item should be used to
+  control the size to improve performance). Note there is no underscore in this option as it uses the options already provided by Django REST Framework.
+
+There is an extra option available when using `get_objects()` from the `ItemList` view directly.
+
+- **_show** - The id of an item in the model. The slice of the items returned will be the slice that includes the
+  item with this id. It is useful when returning users to the list after viewing a single item to ensure they are returned to the same place they left.
+
+#### Searching
 
 
-### Searching
 
-Write the documentation for this.
+
+### AJAX/JavaScript Access
+
+The JavaScript file, `api.js`, has both callback based functions and promise based functions to access the API. Any new
+code should ideally be written using the promise based functions which all have function names which end in 'promise'.
+The other functions remain for legacy support for apps that existed before JavaScript promises were standardised.
+
 
 
 ## Tests
