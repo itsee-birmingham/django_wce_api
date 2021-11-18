@@ -137,7 +137,8 @@ To access an single item use the app name, the model name and the id of the item
 [host]/api/[appname]/[modelname]/[itemid]
 
 As well as the API itself the API app provides view functions that can be used in the views of other apps and returns
-the Django objects so they can be more easily integrated with Django templates. These functions are: `get_objects()` in the `ItemList` class view; and `get_item()` in the `ItemDetail` class view.
+the Django objects so they can be more easily integrated with Django templates. These functions are: `get_objects()` in
+the `ItemList` class view; and `get_item()` in the `ItemDetail` class view.
 
 #### Options
 
@@ -147,24 +148,151 @@ There are several options that can be used to control the data returned by the A
 - **_sort** - A list of comma separated fields to use for sorting. A - can be added before a field name to reverse the
   direction.
 - **limit** - The number of items to return (when returning large number of items the \_fields item should be used to
-  control the size to improve performance). Note there is no underscore in this option as it uses the options already provided by Django REST Framework.
+  control the size to improve performance). Note there is no underscore in this option as it uses the options already
+  provided by Django REST Framework.
 
 There is an extra option available when using `get_objects()` from the `ItemList` view directly.
 
 - **_show** - The id of an item in the model. The slice of the items returned will be the slice that includes the
-  item with this id. It is useful when returning users to the list after viewing a single item to ensure they are returned to the same place they left.
+  item with this id. It is useful when returning users to the list after viewing a single item to ensure they are
+  returned to the same place they left.
 
 #### Searching
 
+The API can be used for many searches but those which include any complex logic will need to be constructed using Q
+objects in Django.
 
+The basic format for searches follow the standard key value pair structure in a URL where they key is the field name in
+the model and the value is the value being searched for.
+
+Relations can be searched using  \_\_ (double underscore) in between the different model field names as explained in
+the Django documentation.
+
+The value can also be modified to allow several different types of searches. Not all search options are relevant to all
+data types.
+
+- value - equals (exact match)
+- !value - does not equal
+- value|i - makes any text search case insensitive
+- \*value\* - contains
+- value\* - starts with
+- \*value - ends with
+- \>value - greater than
+- \>=value - greater than or equal to
+- \<value - less than
+- \<=value - less than or equal to
+
+To perform an AND search on a field add the field to the URL twice with a different value each time. For example to
+look for an item with a title that contains the letters 'r' and 't':
+
+```
+[host]/api/[appname]/[modelname]?title=*r*&title=*t*
+```
+
+To perform an OR search on a field add the field once and use separate the values with commas. For example to look for
+an item with a publication year of 1999 or 2004:
+
+```
+[host]/api/[appname]/[modelname]?publication_year=1999,2004
+```
+
+Queries involving AND/OR logic in a combination of fields are not supported by the API but can be built with Django Q
+objects.
 
 
 ### AJAX/JavaScript Access
 
 The JavaScript file, `api.js`, has both callback based functions and promise based functions to access the API. Any new
 code should ideally be written using the promise based functions which all have function names which end in 'promise'.
-The other functions remain for legacy support for apps that existed before JavaScript promises were standardised.
+The other functions remain to support for apps that existed before JavaScript promises were standardised and added to
+the API code.
 
+The main functions available are described below. Create, update and delete functions require the correct model
+permissions to be set in the Django admin interface.
+
+- #### getCurrentUserPromise()
+
+Returns the details of the logged in user.
+
+- #### getItemFromDatabasePromise()
+
+| Param  | Type                | Description  |
+| ------ | ------------------- | ------------ |
+| app | <code>string</code> | The name of the app containing the model containing the item. |
+| model | <code>string</code> | The name of the model containing the item. |
+| id | <code>int</code> | The id of the item. |
+| project | <code>int</code> | [optional] The id of the current project (required to retrieve an item from a model with project based permissions). |
+
+Retrieves an item from the database.
+
+- #### getItemsFromDatabasePromise()
+
+| Param  | Type                | Description  |
+| ------ | ------------------- | ------------ |
+| app | <code>string</code> | The name of the app containing the model containing the items. |
+| model | <code>string</code> | The name of the model containing the items. |
+| criteria | <code>JSON</code> | The criteria to use for retrieval (can include search criteria or other api options, must contain project__id if the model has project based permissions). |
+
+Retrieves any items that match the criteria from the database.
+
+This function also contains an optional argument, method, in case GET requests ever get too large and require POST to
+send. This has not yet been required and therefore it is not implemented in the server side code and the default uses
+GET.
+
+- #### createItemInDatabasePromise()
+
+| Param  | Type                | Description  |
+| ------ | ------------------- | ------------ |
+| app | <code>string</code> | The name of the app containing the model. |
+| model | <code>string</code> | The name of the model. |
+| data | <code>JSON</code> | The data required to create the item (not including the id field which is automatically assigned). |
+
+Creates an item in the specified model.
+
+- #### updateItemInDatabasePromise()
+
+| Param  | Type                | Description  |
+| ------ | ------------------- | ------------ |
+| app | <code>string</code> | The name of the app containing the model. |
+| model | <code>string</code> | The name of the model. |
+| data | <code>JSON</code> | The full data of the item to be saved including the current id. |
+
+Replaces an existing item with a new one specified model.
+
+- #### updateFieldsInDatabasePromise()
+
+| Param  | Type                | Description  |
+| ------ | ------------------- | ------------ |
+| app | <code>string</code> | The name of the app containing the model. |
+| model | <code>string</code> | The name of the model. |
+| id | <code>int</code> | The id of the item. |
+| data | <code>JSON</code> | The fields and associated data which need to be updated. |
+
+Update only the specified fields of the item identified by the id.
+
+- #### deleteItemFromDatabasePromise()
+
+| Param  | Type                | Description  |
+| ------ | ------------------- | ------------ |
+| app | <code>string</code> | The name of the app containing the model. |
+| model | <code>string</code> | The name of the model. |
+| id | <code>int</code> | The id of the item to be deleted. |
+
+Delete the specified item.
+
+- #### deleteM2MItemFromDatabasePromise()
+
+| Param  | Type                | Description  |
+| ------ | ------------------- | ------------ |
+| app | <code>string</code> | The name of the app containing the model. |
+| model | <code>string</code> | The name of the model. |
+| model_id | <code>int</code> | The id of the item containing the M2M field. |
+| field_name | <code>string</code> | name of the M2M field in the model. |
+| item_model | <code>string</code> | The name of the related field model. |
+| item_id | <code>int</code> | The id of the item in the related model. |
+
+Remove a Many-to-Many (M2M) reference from a model. It does not delete the related model just the reference to it in
+the main model.
 
 
 ## Tests

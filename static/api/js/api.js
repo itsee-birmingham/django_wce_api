@@ -337,8 +337,8 @@ var api = (function (){
   };
 
 
-  deleteM2MItemFromDatabase = function (app, model, model_id, fieldname, item_model, item_id, success_callback, error_callback) {
-      $.ajax({'url': '/api/' + app + '/' + model + '/' + model_id + '/' + fieldname + '/delete/' + item_model + '/' + item_id,
+  deleteM2MItemFromDatabase = function (app, model, model_id, field_name, item_model, item_id, success_callback, error_callback) {
+      $.ajax({'url': '/api/' + app + '/' + model + '/' + model_id + '/' + field_name + '/delete/' + item_model + '/' + item_id,
               'headers': {'Content-Type': 'application/json'}, //'X-CSRFToken': csrf_token,
               'dataType': 'json',
               'method': 'PATCH'
@@ -355,9 +355,9 @@ var api = (function (){
       return;
   };
 
-  deleteM2MItemFromDatabasePromise = function (app, model, model_id, fieldname, item_model, item_id) {
+  deleteM2MItemFromDatabasePromise = function (app, model, model_id, field_name, item_model, item_id) {
     return new Promise(function (resolve, reject) {
-      $.ajax({'url': '/api/' + app + '/' + model + '/' + model_id + '/' + fieldname + '/delete/' + item_model + '/' + item_id,
+      $.ajax({'url': '/api/' + app + '/' + model + '/' + model_id + '/' + field_name + '/delete/' + item_model + '/' + item_id,
               'headers': {'Content-Type': 'application/json'}, //'X-CSRFToken': csrf_token,
               'dataType': 'json',
               'method': 'PATCH'
