@@ -6,6 +6,26 @@ The API is used internally in the Django application and can also be used extern
 handle serialisation. The views in other apps which handle the retrieval and display of data as well as data changes
 also call the API app either through the api or directly by using the functions in views.py
 
+## Configuration/Dependencies
+
+This app is tested with Django 3.2.
+
+The API requires Django REST Framework and is tested on version 3.12.4.
+
+The following configuration is required in the Django settings:
+
+```python
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 100,
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+    ],
+    'DEFAULT_PARSER_CLASSES': ('rest_framework.parsers.JSONParser',)
+}
+```
+
+
 ## BaseModel Inheritance
 
 The API has an abstract model called `BaseModel` which inherits from the `diango.db.models.Model` class. It adds the
@@ -304,3 +324,12 @@ the main model.
 
 The tests for the API are in a separate Django app called `api_tests` as there are no models that can be used for
 testing in the API itself. Testing documentation is available in the `api_tests` app.
+
+
+## License
+
+## Acknowledgments
+
+The code was developed by the Institute of Textual Scholarship and Electronic Editing (ITSEE) at the University of Birmingham as part of the ERC funded ...
+
+This app is based on a similar app developed by ITSEE and funded by ... .
