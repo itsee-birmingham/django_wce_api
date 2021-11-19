@@ -6,9 +6,6 @@ var api = (function (){
   // Private functions
   var csrfSafeMethod, getEtag, setEtag, getCSRFToken;
 
-  // Private variables
-  // const etags = {};
-
   // Public functions
   var setupAjax, createItemInDatabase, updateItemInDatabase, updateFieldsInDatabase,
   getItemFromDatabase, getItemsFromDatabase, deleteItemFromDatabase, deleteM2MItemFromDatabase,
@@ -66,7 +63,6 @@ var api = (function (){
           cookies = document.cookie.split(';');
           for (let i = 0; i < cookies.length; i+=1) {
               cookie = cookies[i].trim();
-              // Does this cookie string begin with the name we want?
               if (cookie.indexOf('csrftoken=') === 0) {
                   cookieValue = decodeURIComponent(cookie.substring(10));
                   break;
@@ -85,7 +81,6 @@ var api = (function (){
       }
     });
   };
-
 
   getCurrentUser = function (success_callback, error_callback) {
     $.ajax({'url': '/api/whoami',
@@ -227,7 +222,6 @@ var api = (function (){
     });
   };
 
-
   updateItemInDatabase = function (app, model, data, success_callback, error_callback) {
     // TODO: see if we need to delete the csrfmiddleware token - I'm not sure it is there
     // it might be in the form but it might not be needed
@@ -270,7 +264,6 @@ var api = (function (){
       });
     });
   };
-
 
   updateFieldsInDatabase = function (app, model, id, data, success_callback, error_callback) {
     var etag = getEtag(app, model, id);
@@ -335,7 +328,6 @@ var api = (function (){
       });
     });
   };
-
 
   deleteM2MItemFromDatabase = function (app, model, model_id, field_name, item_model, item_id, success_callback, error_callback) {
       $.ajax({'url': '/api/' + app + '/' + model + '/' + model_id + '/' + field_name + '/delete/' + item_model + '/' + item_id,
@@ -417,6 +409,5 @@ var api = (function (){
       getCSRFToken: getCSRFToken
     };
   }
-
 
 } () );

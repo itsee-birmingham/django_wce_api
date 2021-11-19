@@ -9,9 +9,6 @@ from api import views as api_views
 
 
 def apply_model_get_restrictions(function):
-    # I think we should have app based superusers
-    # to help restrict access so we could have a transcription superuser who
-    # only gets to see everything in OTE (Bruce and Amy for example)
 
     def wrap(request, *args, **kwargs):
         target = apps.get_model(kwargs['app'], kwargs['model'])

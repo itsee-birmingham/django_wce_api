@@ -328,8 +328,17 @@ testing in the API itself. Testing documentation is available in the `api_tests`
 
 ## License
 
+This app is licensed under the GNU General Public License v3.0.
+
 ## Acknowledgments
 
-The code was developed by the Institute of Textual Scholarship and Electronic Editing (ITSEE) at the University of Birmingham as part of the ERC funded ...
+This application was released as part of the Multimedia Yasna Project funded by the European Union Horizon 2020
+Research and Innovation Programme (grant agreement 694612).
 
-This app is based on a similar app developed by ITSEE and funded by ... .
+The software was created by Catherine Smith at the Institute for Textual Scholarship and Electronic Editing (ITSEE) in
+the University of Birmingham. It is based on a suite of tools developed for and supported by the following research
+projects:
+
+- The Workspace for Collaborative Editing (AHRC/DFG collaborative project 2010-2013)
+- COMPAUL (funded by the European Union 7th Framework Programme under grant agreement 283302, 2011-2016)
+- CATENA (funded by the European Union Horizon 2020 Research and Innovation Programme under grant agreement 770816, 2018-2023)
