@@ -3,16 +3,17 @@ import importlib
 import datetime
 import copy
 import json as jsontools
+from django.conf import settings as django_settings
 from django.http import Http404, JsonResponse
 from django.apps import apps
 from django.db.models import Q
 from django.db.models.deletion import ProtectedError, Collector
 from django.contrib.admin.utils import NestedObjects
-from django.views.decorators.http import etag
 from django.utils.decorators import method_decorator
+from django.views.decorators.http import etag
+from rest_framework import status, mixins, generics, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, mixins, generics, permissions
 from rest_framework.renderers import JSONRenderer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import LimitOffsetPagination
@@ -120,8 +121,10 @@ def get_related_field_type(model, field):
     if len(field.split('__')) < 2:
         return None
     related_model = get_related_model(model, field)
-    if related_model.__name__ == 'User':  # this is nasty but its not safe to rely on duck typing here
-        related_fields = {'id': 'AutoField'}  # TODO: complete a full list of User fields
+    if related_model.__name__ == 'User':  # It is not safe to rely on duck typing here
+        # It doesn't really make sense to search user on anything but id but other fields can be included here if they
+        # are needed
+        related_fields = {'id': 'AutoField'}
     else:
         related_fields = related_model.get_fields()
     if '__' in field and field.split('__')[1] in related_fields:
@@ -330,106 +333,15 @@ class ItemList(generics.ListAPIView):
         return resp.data
 
 
-# TODO: the get for this for private models has to have a fields keyword in get
+# The get for this for private models has to have a fields keyword in get
 # because permissions.DjangoModelPermissions, runs get_queryset before running get
-# and get_queryset adds fields to self.kwargs. it doesn't seem to have broken anything
-class PrivateItemList(generics.ListAPIView):
+# and get_queryset adds fields to self.kwargs. DO not merge this with the ItemList view as it will break it.
+class PrivateItemList(ItemList):
 
     permission_classes = (permissions.DjangoModelPermissions, )
-    renderer_classes = (JSONRenderer, )
-    pagination_class = SelectPagePaginator
 
-    def get_serializer_class(self):
-        target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
-        try:
-            serializer_name = target.SERIALIZER
-            serializer = getattr(importlib.import_module('%s.serializers' % self.kwargs['app']), serializer_name)
-        except Exception:
-            serializer = SimpleSerializer
-        return serializer
-
-    def get_serializer(self, *args, **kwargs):
-        serializer_class = self.get_serializer_class()
-        if 'fields' in self.kwargs:
-            kwargs['fields'] = self.kwargs['fields']
-        return serializer_class(*args, **kwargs)
-
-    def get_queryset(self, fields=None):
-
-        target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
-        try:
-            related_keys = target.RELATED_KEYS
-        except Exception:
-            related_keys = [None]
-        # we only need to use select_related here (and not use prefetch_related) as the lists only show
-        # data from a single model and its Foreign keys
-        hits = target.objects.all().select_related(*related_keys)
-
-        if 'supplied_filter' in self.kwargs and self.kwargs['supplied_filter'] is not None:
-            hits = hits.filter(self.kwargs['supplied_filter'])
-        requestQuery = dict(self.request.GET)
-        filter_query = get_field_filters(requestQuery, target, 'filter')
-        exclude_query = get_field_filters(requestQuery, target, 'exclude')
-        hits = hits.exclude(exclude_query).filter(filter_query).distinct()
-
-        # override fields if required - only used for internal calls from other apps
-        if fields:
-            self.kwargs['fields'] = fields.split(',')
-        elif '_fields' in self.request.GET:
-            self.kwargs['fields'] = self.request.GET.get('_fields').split(',')
-
-        # sort them if needed
-        if '_sort' in self.request.GET:
-            sort_by = self.request.GET.get('_sort').split(',')
-            hits = hits.order_by(*sort_by)
-        return hits
-
-    def get(self, request, app, model, fields=None):
+    def get(self, request, app, model, supplied_filter=None, fields=None):
         return self.list(request)
-
-    def get_offset_required(self, queryset, item_id):
-        try:
-            item_position = list(queryset.values_list('id', flat=True)).index(int(item_id))
-        except Exception:
-            item_position = 0
-        return item_position
-
-    def paginate_queryset_and_get_page(self, queryset, index_required=None):
-        """
-        Return a single page of results, or `None` if pagination is disabled.
-        """
-        if self.paginator is None:
-            return None
-        if index_required is not None:
-            return self.paginator.paginate_queryset_and_get_page(queryset,
-                                                                 self.request,
-                                                                 view=self,
-                                                                 index_required=index_required)
-
-# If you do also need post here then this will work - it is disabled now until we need it
-#     def post(self, request, app, model):
-#         return self.get(request, app, model)
-
-    def get_objects(self, request, **kwargs):
-        self.kwargs = kwargs
-        self.request = request
-        if '_fields' in self.kwargs:
-            queryset = self.get_queryset(fields=self.kwargs['_fields'])
-        else:
-            queryset = self.get_queryset()
-
-        offset = None
-        if '_show' in request.GET:
-            index = self.get_offset_required(queryset, request.GET.get('_show'))
-            (paginated_query_set, offset) = self.paginate_queryset_and_get_page(queryset, index_required=index)
-        else:
-            index = None
-            paginated_query_set = self.paginate_queryset(queryset)
-        resp = self.get_paginated_response(paginated_query_set)
-        resp.data = dict(resp.data)
-        if offset is not None:
-            resp.data['offset'] = offset
-        return resp.data
 
 
 @method_decorator(apply_model_get_restrictions, name='dispatch')
@@ -499,60 +411,9 @@ class ItemDetail(generics.RetrieveAPIView):
             return serializer(item).data
 
 
-class PrivateItemDetail(generics.RetrieveAPIView):
+class PrivateItemDetail(ItemDetail):
 
     permission_classes = (permissions.DjangoModelPermissions, )
-    renderer_classes = (JSONRenderer, )
-
-    def get_queryset(self):
-        target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
-        try:
-            prefetch_keys = target.PREFETCH_KEYS
-        except Exception:
-            prefetch_keys = [None]
-        try:
-            related_keys = target.RELATED_KEYS
-        except Exception:
-            related_keys = [None]
-        hits = target.objects.all().select_related(*related_keys).prefetch_related(*prefetch_keys)
-        if 'supplied_filter' in self.kwargs and self.kwargs['supplied_filter'] is not None:
-            hits = hits.filter(self.kwargs['supplied_filter'])
-        return hits
-
-    def get_serializer_class(self):
-        target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
-        try:
-            serializer_name = target.SERIALIZER
-            serializer = getattr(importlib.import_module('%s.serializers' % self.kwargs['app']), serializer_name)
-        except Exception:
-            serializer = SimpleSerializer
-        return serializer
-
-    # this one is used by the regular api calls
-    def get(self, request, app, model, pk):
-        return self.retrieve(request)
-
-# If you do also need post here then this will work - it is disabled now until we need it
-#     def post(self, request, app, model, pk):
-#         return self.get(request, app, model, pk)
-
-    # this one is used by the html interface
-    def get_item(self, request, **kwargs):
-        self.kwargs = kwargs
-        # this next line is what returns the 500 error if the item cannot be viewed in the
-        # project - it never gets beyond this line
-        item = self.get_queryset().get(pk=kwargs['pk'])
-        if 'format' in kwargs and kwargs['format'] == 'json':
-            serializer = self.get_serializer_class()
-            json = JSONRenderer().render(serializer(item).data).decode('utf-8')
-            return json
-        elif 'format' in kwargs and kwargs['format'] == 'html':
-            return item
-        else:
-            # this one is used only when we try to get the object we just created from the createItem view in this file
-            # the response in that view renders it to json
-            serializer = self.get_serializer_class()
-            return serializer(item).data
 
 
 @method_decorator(etag(get_etag), name='dispatch')
@@ -607,18 +468,18 @@ class ItemUpdate(generics.UpdateAPIView):
             current = jsontools.dumps(json, sort_keys=True)
             if self.ordered(current) != self.ordered(new):
                 data['last_modified_time'] = datetime.datetime.now()
-                if hasattr(request.user, 'public_name') and request.user.public_name != '':
-                    data['last_modified_by'] = request.user.public_name
-                elif hasattr(request.user, 'full_name') and request.user.full_name != '':
-                    data['last_modified_by'] = request.user.full_name
+                if (django_settings.USER_IDENTIFIER_FIELD and
+                        (hasattr(request.user, django_settings.USER_IDENTIFIER_FIELD) and
+                            getattr(request.user, django_settings.USER_IDENTIFIER_FIELD) != '')):
+                    data['last_modified_by'] = getattr(request.user, django_settings.USER_IDENTIFIER_FIELD)
                 else:
                     data['last_modified_by'] = request.user.username
         else:
             data['last_modified_time'] = datetime.datetime.now()
-            if hasattr(request.user, 'public_name') and request.user.public_name != '':
-                data['last_modified_by'] = request.user.public_name
-            elif hasattr(request.user, 'full_name') and request.user.full_name != '':
-                data['last_modified_by'] = request.user.full_name
+            if (django_settings.USER_IDENTIFIER_FIELD and
+                    (hasattr(request.user, django_settings.USER_IDENTIFIER_FIELD) and
+                        getattr(request.user, django_settings.USER_IDENTIFIER_FIELD) != '')):
+                data['last_modified_by'] = getattr(request.user, django_settings.USER_IDENTIFIER_FIELD)
             else:
                 data['last_modified_by'] = request.user.username
 
@@ -676,10 +537,10 @@ class ItemCreate(generics.CreateAPIView):
         self.kwargs = kwargs
         data = request.data
         data['created_time'] = datetime.datetime.now()
-        if hasattr(request.user, 'public_name') and request.user.public_name != '':
-            data['created_by'] = request.user.public_name
-        elif hasattr(request.user, 'full_name') and request.user.full_name != '':
-            data['created_by'] = request.user.full_name
+        if (django_settings.USER_IDENTIFIER_FIELD and
+                (hasattr(request.user, django_settings.USER_IDENTIFIER_FIELD) and
+                    getattr(request.user, django_settings.USER_IDENTIFIER_FIELD) != '')):
+            data['created_by'] = getattr(request.user, django_settings.USER_IDENTIFIER_FIELD)
         else:
             data['created_by'] = request.user.username
         serializer = self.get_serializer(data=data)
@@ -730,10 +591,10 @@ class M2MItemDelete(generics.UpdateAPIView):
         author = apps.get_model(self.kwargs['app'], self.kwargs['itemmodel']).objects.get(pk=self.kwargs['itempk'])
         getattr(instance, self.kwargs['fieldname']).remove(author)
         instance.last_modified_time = datetime.datetime.now()
-        if hasattr(request.user, 'public_name') and request.user.public_name != '':
-            instance.last_modified_by = request.user.public_name
-        elif hasattr(request.user, 'full_name') and request.user.full_name != '':
-            instance.last_modified_by = request.user.full_name
+        if (django_settings.USER_IDENTIFIER_FIELD and
+                (hasattr(request.user, django_settings.USER_IDENTIFIER_FIELD) and
+                    getattr(request.user, django_settings.USER_IDENTIFIER_FIELD) != '')):
+            instance.last_modified_by = getattr(request.user, django_settings.USER_IDENTIFIER_FIELD)
         else:
             instance.last_modified_by = request.user.username
         instance.save()
