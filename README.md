@@ -4,7 +4,8 @@ The API app underlies everything else in the Workspace for Collaborative Editing
 
 The API is used internally in the Django application and can also be used externally. It uses Django REST Framework to
 handle serialisation. The views in other apps which handle the retrieval and display of data as well as data changes
-also call the API app either through the api or directly by using the functions in views.py
+also call the API app either through the api or directly by using the functions in views.py.
+
 
 ## Configuration/Dependencies
 
