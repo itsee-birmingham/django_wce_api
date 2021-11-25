@@ -341,3 +341,5 @@ projects:
 - COMPAUL (funded by the European Union 7th Framework Programme under grant agreement 283302, 2011-2016)
 - MUYA (funded by the European Union Horizon 2020 Research and Innovation Programme under grant agreement 694612, 2016-2022)
 - CATENA (funded by the European Union Horizon 2020 Research and Innovation Programme under grant agreement 770816, 2018-2023)
+
+[![DOI](https://zenodo.org/badge/431876132.svg)](https://zenodo.org/badge/latestdoi/431876132)
