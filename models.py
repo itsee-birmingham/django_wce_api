@@ -9,5 +9,9 @@ class BaseModel (models.Model):
     last_modified_by = models.TextField('Last_modified_by', blank=True)
     version_number = models.IntegerField(null=True)  # has to be null because set in post_save on create
 
+    def get_serialization_fields():
+        fields = '__all__'
+        return fields
+
     class Meta:
         abstract = True
