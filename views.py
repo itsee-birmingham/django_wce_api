@@ -4,21 +4,16 @@ import datetime
 import copy
 import json as jsontools
 from django.conf import settings as django_settings
-from django.http import Http404, JsonResponse
+from django.http import JsonResponse
 from django.apps import apps
 from django.db.models import Q
-from django.db.models.deletion import ProtectedError, Collector
-from django.contrib.admin.utils import NestedObjects
+from django.db.models.deletion import ProtectedError
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import etag
-from rest_framework import status, mixins, generics, permissions
-from rest_framework.views import APIView
+from rest_framework import status, generics, permissions
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.decorators import api_view
-from accounts.models import User
 from accounts.serializers import UserSerializer
 from api.serializers import SimpleSerializer
 from api.decorators import apply_model_get_restrictions
