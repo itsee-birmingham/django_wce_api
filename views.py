@@ -579,10 +579,10 @@ class M2MItemDelete(generics.UpdateAPIView):
         return target.objects.all()
 
     def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
+        # partial = kwargs.pop('partial', False)
+        # target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
         instance = self.get_object()
-        deletion_field = getattr(instance, self.kwargs['fieldname'])
+        # deletion_field = getattr(instance, self.kwargs['fieldname'])
         author = apps.get_model(self.kwargs['app'], self.kwargs['itemmodel']).objects.get(pk=self.kwargs['itempk'])
         getattr(instance, self.kwargs['fieldname']).remove(author)
         instance.last_modified_time = datetime.datetime.now()

@@ -1,7 +1,6 @@
 from django.http import JsonResponse
 from django.apps import apps
 from django.db.models import Q
-from accounts.models import User
 from api import views as api_views
 
 # TODO: might want something similar so people can only write to their own data in some models
