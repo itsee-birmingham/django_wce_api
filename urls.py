@@ -6,7 +6,7 @@ urlpatterns = [
     re_path(r'^(?P<app>[a-z_]+)/(?P<model>[a-z_]+)/create/?$', views.ItemCreate.as_view()),
     re_path(r'^(?P<app>[a-z_]+)/(?P<model>[a-z_]+)/update/(?P<pk>[0-9_a-zA-Z]+)/?$', views.ItemUpdate.as_view()),
     re_path(r'^(?P<app>[a-z_]+)/(?P<model>[a-z_]+)/delete/(?P<pk>[0-9_a-zA-Z]+)/?$', views.ItemDelete.as_view()),
-    re_path(r'^(?P<app>[a-z_]+)/(?P<model>[a-z_]+)/(?P<pk>[0-9_a-zA-Z]+)/(?P<fieldname>[a-z_]+)/delete/(?P<itemmodel>[0-9_a-zA-Z]+)/(?P<itempk>[0-9_a-zA-Z]+)/?$',
+    re_path(r'^(?P<app>[a-z_]+)/(?P<model>[a-z_]+)/(?P<pk>[0-9_a-zA-Z]+)/(?P<fieldname>[a-z_]+)/delete/(?P<itemmodel>[0-9_a-zA-Z]+)/(?P<itempk>[0-9_a-zA-Z]+)/?$',  # NoQA
             views.M2MItemDelete.as_view()),
     # private get models MUST COME FIRST
     # these are now only used in citations they have been combined for transcription app
