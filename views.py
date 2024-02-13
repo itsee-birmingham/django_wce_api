@@ -440,14 +440,6 @@ class ItemUpdate(generics.UpdateAPIView):
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
         return target.objects.all()
 
-    def ordered(self, obj):
-        if isinstance(obj, dict):
-            return sorted((k, ordered(v)) for k, v in obj.items())
-        if isinstance(obj, list):
-            return sorted(ordered(x) for x in obj)
-        else:
-            return obj
-
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
 
@@ -461,7 +453,7 @@ class ItemUpdate(generics.UpdateAPIView):
             serializer = self.get_serializer_class()
             json = serializer(item).data
             current = jsontools.dumps(json, sort_keys=True)
-            if self.ordered(current) != self.ordered(new):
+            if current != new:
                 data['last_modified_time'] = datetime.datetime.now()
                 if (django_settings.USER_IDENTIFIER_FIELD and
                         (hasattr(request.user, django_settings.USER_IDENTIFIER_FIELD) and
