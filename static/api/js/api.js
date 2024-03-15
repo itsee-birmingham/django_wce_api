@@ -1,7 +1,5 @@
-/*jshint esversion: 6 */
-var testing;
+/* exported api */
 var api = (function (){
-  "use strict";
 
   // Private functions
   var csrfSafeMethod, getEtag, setEtag, getCSRFToken;
@@ -27,9 +25,9 @@ var api = (function (){
     } else {
       etags = {};
     }
-    if (etags.hasOwnProperty(app) &&
-            etags[app].hasOwnProperty(model) &&
-            etags[app][model].hasOwnProperty(id)) {
+    if (Object.prototype.hasOwnProperty.call(etags, app) &&
+          Object.prototype.hasOwnProperty.call(etags[app], model) &&
+            Object.prototype.hasOwnProperty.call(etags[app][model], id)) {
       return etags[app][model][id];
     }
     return '*';
@@ -45,10 +43,10 @@ var api = (function (){
       etags = {};
     }
     if (etag !== null && etag !== undefined) {
-      if (!etags.hasOwnProperty(app)) {
+      if (!Object.prototype.hasOwnProperty.call(etags, app)) {
         etags[app] = {};
       }
-      if (!etags[app].hasOwnProperty(model)) {
+      if (!Object.prototype.hasOwnProperty.call(etags[app], model)) {
         etags[app][model] = {};
       }
       etags[app][model][id] = '"' + etag + '"';
@@ -85,7 +83,7 @@ var api = (function (){
   getCurrentUser = function (success_callback, error_callback) {
     $.ajax({'url': '/api/whoami',
         'method': 'GET'}
-    ).done(function (response, textStatus, jqXHR) {
+    ).done(function (response) {
       if (typeof success_callback !== 'undefined') {
         success_callback(response);
       }
@@ -167,7 +165,7 @@ var api = (function (){
 
   // TODO: consider whether this should also set etag for all items returned
   getItemsFromDatabasePromise = function (app, model, criteria, method) {
-    if (typeof method === undefined) {
+    if (method === undefined) {
       method = 'GET';
     }
     return new Promise(function (resolve, reject) {
@@ -335,7 +333,7 @@ var api = (function (){
               'dataType': 'json',
               'method': 'PATCH'
               }
-      ).done(function (response) {//{'json': JSON.stringify(data), 'csrfmiddlewaretoken': csrf_token}, 'success': function (response) {
+      ).done(function (response) {
           if (typeof success_callback !== 'undefined') {
               success_callback(response);
           }
@@ -350,7 +348,7 @@ var api = (function (){
   deleteM2MItemFromDatabasePromise = function (app, model, model_id, field_name, item_model, item_id) {
     return new Promise(function (resolve, reject) {
       $.ajax({'url': '/api/' + app + '/' + model + '/' + model_id + '/' + field_name + '/delete/' + item_model + '/' + item_id,
-              'headers': {'Content-Type': 'application/json'}, //'X-CSRFToken': csrf_token,
+              'headers': {'Content-Type': 'application/json'},
               'dataType': 'json',
               'method': 'PATCH'
               }
@@ -362,52 +360,27 @@ var api = (function (){
     });
   };
 
-  if (testing) {
-    return {
-      // private
-      csrfSafeMethod: csrfSafeMethod,
-      getEtag: getEtag,
-      setEtag: setEtag,
-      // public
-      setupAjax: setupAjax,
-      createItemInDatabase: createItemInDatabase,
-      updateItemInDatabase: updateItemInDatabase,
-      updateFieldsInDatabase: updateFieldsInDatabase,
-      getItemFromDatabase: getItemFromDatabase,
-      getItemsFromDatabase: getItemsFromDatabase,
-      deleteItemFromDatabase: deleteItemFromDatabase,
-      deleteM2MItemFromDatabase: deleteM2MItemFromDatabase,
-      createItemInDatabasePromise: createItemInDatabasePromise,
-      updateItemInDatabasePromise: updateItemInDatabasePromise,
-      updateFieldsInDatabasePromise: updateFieldsInDatabasePromise,
-      getItemFromDatabasePromise: getItemFromDatabasePromise,
-      getItemsFromDatabasePromise: getItemsFromDatabasePromise,
-      deleteItemFromDatabasePromise: deleteItemFromDatabasePromise,
-      deleteM2MItemFromDatabasePromise: deleteM2MItemFromDatabasePromise,
-      getCurrentUserPromise: getCurrentUserPromise,
-      getCurrentUser: getCurrentUser
-    };
-  } else {
-    return {
-      setupAjax: setupAjax,
-      createItemInDatabase: createItemInDatabase,
-      updateItemInDatabase: updateItemInDatabase,
-      updateFieldsInDatabase: updateFieldsInDatabase,
-      getItemFromDatabase: getItemFromDatabase,
-      getItemsFromDatabase: getItemsFromDatabase,
-      deleteItemFromDatabase: deleteItemFromDatabase,
-      deleteM2MItemFromDatabase: deleteM2MItemFromDatabase,
-      createItemInDatabasePromise: createItemInDatabasePromise,
-      updateItemInDatabasePromise: updateItemInDatabasePromise,
-      updateFieldsInDatabasePromise: updateFieldsInDatabasePromise,
-      getItemFromDatabasePromise: getItemFromDatabasePromise,
-      getItemsFromDatabasePromise: getItemsFromDatabasePromise,
-      deleteItemFromDatabasePromise: deleteItemFromDatabasePromise,
-      deleteM2MItemFromDatabasePromise: deleteM2MItemFromDatabasePromise,
-      getCurrentUserPromise: getCurrentUserPromise,
-      getCurrentUser: getCurrentUser,
-      getCSRFToken: getCSRFToken
-    };
-  }
+
+  return {
+    setupAjax: setupAjax,
+    createItemInDatabase: createItemInDatabase,
+    updateItemInDatabase: updateItemInDatabase,
+    updateFieldsInDatabase: updateFieldsInDatabase,
+    getItemFromDatabase: getItemFromDatabase,
+    getItemsFromDatabase: getItemsFromDatabase,
+    deleteItemFromDatabase: deleteItemFromDatabase,
+    deleteM2MItemFromDatabase: deleteM2MItemFromDatabase,
+    createItemInDatabasePromise: createItemInDatabasePromise,
+    updateItemInDatabasePromise: updateItemInDatabasePromise,
+    updateFieldsInDatabasePromise: updateFieldsInDatabasePromise,
+    getItemFromDatabasePromise: getItemFromDatabasePromise,
+    getItemsFromDatabasePromise: getItemsFromDatabasePromise,
+    deleteItemFromDatabasePromise: deleteItemFromDatabasePromise,
+    deleteM2MItemFromDatabasePromise: deleteM2MItemFromDatabasePromise,
+    getCurrentUserPromise: getCurrentUserPromise,
+    getCurrentUser: getCurrentUser,
+    getCSRFToken: getCSRFToken
+  };
+
 
 } () );
