@@ -39,6 +39,10 @@ fields:
 -   last_modified_by
 -   version_number
 
+it also adds the function `get_serialization_fields()`  a function that returns all the fields in the model. This 
+function is used to determine the fields that will be included in  the serialization by default (unless specific fields
+are given in the request). 
+
 All models in apps which intend to use the API model for creating and saving models **must** be based on this abstract
 model rather than the one provided by Django, unless the model itself includes all of the fields specified above.
 
@@ -54,12 +58,8 @@ are required for all functions):
 - REQUIRED_FIELDS - a list of the fields required when creating an object using the API. This should be the list of
   minimum fields required for the object to be created.
 
-- get_serialization_fields() - a function that returns the fields that will be included in the serialization by default
-  (unless specific fields are given in the request).
-
 - get_fields() - a function that returns a dictionary with field names as keys and fields type as the data. This is
   used in serialization and display to determine what the field type is and therefore how to go about interacting with it.
-
 
 Other things which can be useful to specify are the standard Django things such as:
 
@@ -75,11 +75,11 @@ To make the SQL calls more efficient the following variables should be provided 
 - PREFETCH_KEYS - A list of all of the many-to-many or one-to-many keys in this model ﻿(these might be declared with a
   foreign key in the related model only).
 
-REMOVE FOR MUYA
+
 If the data in the models are going to be displayed in tables or are going to be used for searching then the following
 model variables and function might be useful. This is mostly used in the citations app and some in the catena_catalogue:
 
-- LIST_FIELDS - ﻿A list of fields to display in the 'list view' of the model. A dictionary can be used if the database field name is different from the column label for display and/or the search string required (for example when searching related models or array fields) keys for dictionary are 'id', 'label' and 'search' respectively. Both 'label' and 'search' will default to 'id' if not provided. If all three values are the same a string can be provided instead of a dictionary.
+- LIST_FIELDS - A list of fields to display in the 'list view' of the model. A dictionary can be used if the database field name is different from the column label for display and/or the search string required (for example when searching related models or array fields) keys for dictionary are 'id', 'label' and 'search' respectively. Both 'label' and 'search' will default to 'id' if not provided. If all three values are the same a string can be provided instead of a dictionary.
 
 - ITEM_FIELDS - A list of the fields to display when displaying a single item from the database in the order the fields should be shown.
 
