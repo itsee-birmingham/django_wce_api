@@ -328,9 +328,9 @@ class ItemList(generics.ListAPIView):
         return resp.data
 
 
-# The get for this for private models has to have a fields keyword in get
-# because permissions.DjangoModelPermissions, runs get_queryset before running get
-# and get_queryset adds fields to self.kwargs. DO not merge this with the ItemList view as it will break it.
+# The get for this for private models has to have a fields keyword because permissions.DjangoModelPermissions
+# runs get_queryset before running the get function and get_queryset adds fields to self.kwargs.
+# Do not merge this with the ItemList view as it will break it.
 class PrivateItemList(ItemList):
 
     permission_classes = (permissions.DjangoModelPermissions, )
