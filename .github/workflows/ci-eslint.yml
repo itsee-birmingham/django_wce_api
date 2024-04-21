@@ -28,10 +28,8 @@ jobs:
 
       # install eslint
       - name: Install eslint
-        run: npm i eslint@"<9.0.0"
-      
-      - name: Install plugin
-        run: npm i @stylistic/eslint-plugin
+        run: npm i eslint
+        run: npm i globals
 
       # lint the files
       - name: Do the linting
