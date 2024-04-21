@@ -29,6 +29,8 @@ jobs:
       # install eslint
       - name: Install eslint
         run: npm i eslint
+      
+      - name: Install plugin
         run: npm i globals
 
       # lint the files
