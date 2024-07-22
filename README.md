@@ -6,12 +6,11 @@ The API is used internally in the Django application and can also be used extern
 handle serialisation. The views in other apps which handle the retrieval and display of data as well as data changes
 also call the API app either through the api or directly by using the functions in views.py.
 
-
 ## Configuration/Dependencies
 
-This app is tested with Django 3.2.
+This app is tested with Django 4.2.
 
-The API requires Django REST Framework and is tested on version 3.12.4.
+The API requires Django REST Framework and is tested on version 3.14.0.
 
 The following configuration is required in the Django settings:
 
@@ -26,22 +25,21 @@ REST_FRAMEWORK = {
 }
 ```
 
-
 ## BaseModel Inheritance
 
 The API has an abstract model called `BaseModel` which inherits from the `diango.db.models.Model` class. It adds the
 fields which the API application expects to be present in all models it tries to save. These are the following meta data
 fields:
 
--   created_time
--   created_by
--   last_modified_time
--   last_modified_by
--   version_number
+- created_time
+- created_by
+- last_modified_time
+- last_modified_by
+- version_number
 
-it also adds the function `get_serialization_fields()`  a function that returns all the fields in the model. This 
-function is used to determine the fields that will be included in  the serialization by default (unless specific fields
-are given in the request). 
+it also adds the function `get_serialization_fields()`  a function that returns all the fields in the model. This
+function is used to determine the fields that will be included in the serialization by default (unless specific fields
+are given in the request).
 
 All models in apps which intend to use the API model for creating and saving models **must** be based on this abstract
 model rather than the one provided by Django, unless the model itself includes all of the fields specified above.
@@ -72,9 +70,8 @@ To make the SQL calls more efficient the following variables should be provided 
 
 - RELATED_KEYS - A list of all fields that are foreign keys in this model.
 
-- PREFETCH_KEYS - A list of all of the many-to-many or one-to-many keys in this model ﻿(these might be declared with a
+- PREFETCH_KEYS - A list of all of the many-to-many or one-to-many keys in this model (these might be declared with a
   foreign key in the related model only).
-
 
 If the data in the models are going to be displayed in tables or are going to be used for searching then the following
 model variables and function might be useful. This is mostly used in the citations app and some in the catena_catalogue:
@@ -82,6 +79,8 @@ model variables and function might be useful. This is mostly used in the citatio
 - LIST_FIELDS - A list of fields to display in the 'list view' of the model. A dictionary can be used if the database field name is different from the column label for display and/or the search string required (for example when searching related models or array fields) keys for dictionary are 'id', 'label' and 'search' respectively. Both 'label' and 'search' will default to 'id' if not provided. If all three values are the same a string can be provided instead of a dictionary.
 
 - ITEM_FIELDS - A list of the fields to display when displaying a single item from the database in the order the fields should be shown.
+
+-   get_row_dict() - function required when displaying an item, it gets the metadata for the item fields in an ordered dict (NB this needs better documentation!)
 
 - get_search_fields() - A list of dictionaries containing metadata about the fields appropriate for searches of the data in the model (see citations app for structure and code example). Used in an ajax call on the search page to get the fields relevant for searching each model. This will sometimes include relations from other models (again there are examples in the citations app).
 
@@ -134,7 +133,6 @@ the Django REST Framework serialisations and directly with the Django objects. T
 more flexible so that a single view can be used with any model and with a range of additional arguments which are
 typically stored in the models themselves. The models must contain certain information in order to work with the API
 views. This is detailed in the section on the API BaseModel.
-
 
 ## Using the API
 
@@ -206,20 +204,19 @@ data types.
 To perform an AND search on a field add the field to the URL twice with a different value each time. For example to
 look for an item with a title that contains the letters 'r' and 't':
 
-```
+```code
 [host]/api/[appname]/[modelname]?title=*r*&title=*t*
 ```
 
 To perform an OR search on a field add the field once and use separate the values with commas. For example to look for
 an item with a publication year of 1999 or 2004:
 
-```
+```code
 [host]/api/[appname]/[modelname]?publication_year=1999,2004
 ```
 
 Queries involving AND/OR logic in a combination of fields are not supported by the API but can be built with Django Q
 objects.
-
 
 ### AJAX/JavaScript Access
 
@@ -320,12 +317,10 @@ Delete the specified item.
 Remove a Many-to-Many (M2M) reference from a model. It does not delete the related model just the reference to it in
 the main model.
 
-
 ## Tests
 
 The tests for the API are in a separate Django app called `api_tests` as there are no models that can be used for
 testing in the API itself. Testing documentation is available in the `api_tests` app.
-
 
 ## License
 
