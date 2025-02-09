@@ -1,4 +1,5 @@
-from django.urls import re_path
+from django.apps import apps
+from django.urls import re_path, path
 from api import views
 
 urlpatterns = [
@@ -17,3 +18,15 @@ urlpatterns = [
     re_path(r'^(?P<app>[a-z_]+)/(?P<model>[a-z_]+)/?$', views.ItemList.as_view())
 
 ]
+
+
+def generate_dynamic_endpoints():
+    endpoints = []
+    for app in apps.get_app_configs():
+        for model in app.get_models():
+            endpoint = path(f'{app.label}/{model.__name__.lower()}/', views.ItemList.as_view(), name=f'{app.label}-{model.__name__.lower()}')
+            endpoints.append(endpoint)
+    return endpoints
+
+
+urlpatterns += generate_dynamic_endpoints()
