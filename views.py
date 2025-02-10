@@ -240,6 +240,10 @@ class ItemList(generics.ListAPIView):
         serializer_class = self.get_serializer_class()
         if 'fields' in self.kwargs:
             kwargs['fields'] = self.kwargs['fields']
+        if self.request.user.is_authenticated:
+            kwargs['authenticated'] = True
+        else:
+            kwargs['authenticated'] = False
         return serializer_class(*args, **kwargs)
 
     def get_queryset(self, fields=None):
@@ -408,11 +412,15 @@ class ItemDetail(generics.RetrieveAPIView):
 
 class PrivateItemDetail(ItemDetail):
 
+    swagger_schema = None
+
     permission_classes = (permissions.DjangoModelPermissions, )
 
 
 @method_decorator(etag(get_etag), name='dispatch')
 class ItemUpdate(generics.UpdateAPIView):
+
+    swagger_schema = None
 
     permission_classes = (permissions.DjangoModelPermissions, )
 
@@ -494,6 +502,8 @@ class ItemUpdate(generics.UpdateAPIView):
 
 class ItemCreate(generics.CreateAPIView):
 
+    swagger_schema = None
+
     permission_classes = (permissions.DjangoModelPermissions, )
 
     def get_serializer_class(self):
@@ -549,6 +559,8 @@ class ItemCreate(generics.CreateAPIView):
 
 class ItemDelete(generics.DestroyAPIView):
 
+    swagger_schema = None
+
     permission_classes = (permissions.DjangoModelPermissions, )
 
     def get_queryset(self):
@@ -563,6 +575,9 @@ class ItemDelete(generics.DestroyAPIView):
 
 
 class M2MItemDelete(generics.UpdateAPIView):
+
+    swagger_schema = None
+
     # this is called as a PATCH as although it does delete the link it updates the target object
     permission_classes = (permissions.DjangoModelPermissions, )
 

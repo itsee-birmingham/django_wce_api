@@ -35,6 +35,9 @@ class BaseModelSerializer(serializers.ModelSerializer):
             self.Meta.fields = kwargs['fields']
         else:
             self.Meta.fields = self.Meta.model.get_serialization_fields()
+        # if not kwargs['authenticated']:
+        #     self.Meta.fields.pop('last_modified_by')
+        #     self.Meta.fields.pop('created_by')
 
         if len(args) > 0 and 'data' in kwargs:
             super(BaseModelSerializer, self).__init__(instance=args[0], data=kwargs['data'], partial=partial)
