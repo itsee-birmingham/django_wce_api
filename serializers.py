@@ -8,7 +8,7 @@ class SimpleSerializer(serializers.ModelSerializer):
         model = None
         fields = ()
 
-    def __init__(self, instance=None, fields=None, context=None, data=None):
+    def __init__(self, instance=None, fields=None, context=None, data=None, authenticated=False):
         if instance:
             if isinstance(instance, list):
                 self.Meta.model = type(instance[0])
@@ -31,13 +31,14 @@ class BaseModelSerializer(serializers.ModelSerializer):
             partial = kwargs.pop('partial', False)
         else:
             partial = False
-        if 'fields' in kwargs:
-            self.Meta.fields = kwargs['fields']
+        if not kwargs['authenticated']:
+            model_fields = self.Meta.model.get_serialization_fields(False)
         else:
-            self.Meta.fields = self.Meta.model.get_serialization_fields()
-        # if not kwargs['authenticated']:
-        #     self.Meta.fields.pop('last_modified_by')
-        #     self.Meta.fields.pop('created_by')
+            model_fields = self.Meta.model.get_serialization_fields(True)
+        if 'fields' in kwargs:
+            self.Meta.fields = [x for x in kwargs['fields'] if x in model_fields]
+        else:
+            self.Meta.fields = model_fields
 
         if len(args) > 0 and 'data' in kwargs:
             super(BaseModelSerializer, self).__init__(instance=args[0], data=kwargs['data'], partial=partial)

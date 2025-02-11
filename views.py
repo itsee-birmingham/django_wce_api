@@ -10,6 +10,7 @@ from django.db.models import Q
 from django.db.models.deletion import ProtectedError
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import etag
+from django.views.generic.base import TemplateView
 from rest_framework import status, generics, permissions
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
@@ -412,15 +413,11 @@ class ItemDetail(generics.RetrieveAPIView):
 
 class PrivateItemDetail(ItemDetail):
 
-    swagger_schema = None
-
     permission_classes = (permissions.DjangoModelPermissions, )
 
 
 @method_decorator(etag(get_etag), name='dispatch')
 class ItemUpdate(generics.UpdateAPIView):
-
-    swagger_schema = None
 
     permission_classes = (permissions.DjangoModelPermissions, )
 
@@ -502,8 +499,6 @@ class ItemUpdate(generics.UpdateAPIView):
 
 class ItemCreate(generics.CreateAPIView):
 
-    swagger_schema = None
-
     permission_classes = (permissions.DjangoModelPermissions, )
 
     def get_serializer_class(self):
@@ -559,8 +554,6 @@ class ItemCreate(generics.CreateAPIView):
 
 class ItemDelete(generics.DestroyAPIView):
 
-    swagger_schema = None
-
     permission_classes = (permissions.DjangoModelPermissions, )
 
     def get_queryset(self):
@@ -575,8 +568,6 @@ class ItemDelete(generics.DestroyAPIView):
 
 
 class M2MItemDelete(generics.UpdateAPIView):
-
-    swagger_schema = None
 
     # this is called as a PATCH as although it does delete the link it updates the target object
     permission_classes = (permissions.DjangoModelPermissions, )
@@ -601,3 +592,13 @@ class M2MItemDelete(generics.UpdateAPIView):
             instance.last_modified_by = request.user.username
         instance.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ApiDocs(TemplateView):
+
+    template_name = 'api/api_schema.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['app_name'] = kwargs['app'].replace('_', ' ').title()
+        return context
