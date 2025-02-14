@@ -105,7 +105,16 @@ def apply_model_get_restrictions(function):
                 return function(request, *args, **kwargs)
 
             # Here we need to grab the user fields and add them to the query against the user
-            project_model = apps.get_model(kwargs['app'], 'Project')
+            try:
+                project_model = apps.get_model(kwargs['app'], 'Project')
+            except LookupError:
+                # then this app doesn't have a project but maybe we specfied a different app in the model
+                try:
+                    project_app = target.PROJECT_APP
+                    project_model = apps.get_model(project_app, 'Project')
+                except (AttributeError, LookupError):
+                    raise
+
             user_fields = project_model.get_user_fields()
 
             query = Q()
