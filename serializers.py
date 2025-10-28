@@ -3,6 +3,12 @@ from rest_framework import serializers
 
 
 class SimpleSerializer(serializers.ModelSerializer):
+    """A generic serializer for a model.
+
+    Used as a backup by the api if no other serializer is specified. it is unlikely to be suitable for anything but
+    very simple models.
+    """
+
     class Meta:
         model = None
         fields = ()
@@ -24,6 +30,14 @@ class SimpleSerializer(serializers.ModelSerializer):
 
 
 class BaseModelSerializer(serializers.ModelSerializer):
+    """The serializer for the base model.
+
+    This model should be inherited by all other serializers.
+
+    This takes the Model serializer from Django Rest Framework and makes it more flexible by allowing the
+    specification of data in the `__init__` function. This was done to allow the required fields to be specified. This
+    can be important when requesting large numbers of records to control the size of the data returned.
+    """
     def __init__(self, *args, **kwargs):
         if kwargs:
             partial = kwargs.pop('partial', False)

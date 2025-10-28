@@ -43,6 +43,10 @@ ignore = [
     "D102",  # missing docstring in public method
 ]
 
+"models.py" = [
+    "D102",  # missing docstring in public method
+]
+
 "serializers.py" = [
    	"D101",  # missing docstring in public class
 	"D102",  # missing docstring in public method

@@ -9,6 +9,7 @@ from api import views as api_views
 
 
 def apply_model_get_restrictions(function):
+    """Apply model restrictions to the data returned by the API."""
     def wrap(request, *args, **kwargs):
         target = apps.get_model(kwargs['app'], kwargs['model'])
 

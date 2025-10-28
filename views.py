@@ -4,6 +4,7 @@ import importlib
 import json as jsontools
 import re
 
+from accounts.serializers import UserSerializer
 from django.apps import apps
 from django.conf import settings as django_settings
 from django.db.models import Q
@@ -16,7 +17,6 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
-from accounts.serializers import UserSerializer
 from api.decorators import apply_model_get_restrictions
 from api.serializers import SimpleSerializer
 
