@@ -1,8 +1,7 @@
 from django.db import models
 
 
-class BaseModel (models.Model):
-
+class BaseModel(models.Model):
     created_time = models.DateTimeField(null=True)
     created_by = models.TextField(verbose_name='Created by', blank=True)
     last_modified_time = models.DateTimeField(null=True)

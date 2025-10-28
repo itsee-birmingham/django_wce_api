@@ -1,22 +1,24 @@
-import re
-import importlib
-import datetime
 import copy
+import datetime
+import importlib
 import json as jsontools
-from django.conf import settings as django_settings
-from django.http import JsonResponse
+import re
+
 from django.apps import apps
+from django.conf import settings as django_settings
 from django.db.models import Q
 from django.db.models.deletion import ProtectedError
+from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import etag
-from rest_framework import status, generics, permissions
-from rest_framework.response import Response
-from rest_framework.renderers import JSONRenderer
+from rest_framework import generics, permissions, status
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.renderers import JSONRenderer
+from rest_framework.response import Response
+
 from accounts.serializers import UserSerializer
-from api.serializers import SimpleSerializer
 from api.decorators import apply_model_get_restrictions
+from api.serializers import SimpleSerializer
 
 
 def get_user(request):
@@ -35,8 +37,7 @@ def get_etag(request, app=None, model=None, pk=None):
 
 
 def get_count(queryset):
-    """
-    Determine an object count, supporting either querysets or regular lists.
+    """Determine an object count, supporting either querysets or regular lists.
     """
     try:
         return queryset.count()
@@ -57,35 +58,54 @@ def get_date_field(operator, value):
 
 def get_query_tuple(field_type, field, value):
     operator_lookup = {
-                       'CharField': [[r'^([^*|]+)\*$', '__startswith'], [r'^([^*|]+)\*\|i$', '__istartswith'],
-                                     [r'^\*([^*|]+)$', '__endswith'], [r'^\*([^*|]+)\|i$', '__iendswith'],
-                                     [r'^\*([^*|]+)\*$', '__contains'], [r'^\*([^*|]+)\*\|i$', '__icontains'],
-                                     [r'^([^*|]+)\|i$', '__iexact']],
-                       'TextField': [[r'^([^*|]+)\*$', '__startswith'], [r'^([^*|]+)\*\|i$', '__istartswith'],
-                                     [r'^\*([^*|]+)$', '__endswith'], [r'^\*([^*|]+)\|i$', '__iendswith'],
-                                     [r'^\*([^*|]+)\*$', '__contains'], [r'^\*([^*|]+)\*\|i$', '__icontains'],
-                                     [r'^([^*|]+)\|i$', '__iexact']],
-                       'IntegerField': [[r'^>([0-9]+)$', '__gt'], [r'^>=([0-9]+)$', '__gte'],
-                                        [r'^<([0-9]+)$', '__lt'], [r'^<=([0-9]+)$', '__lte']],
-                       'DateField': [[r'^>([0-9]+)$', '__gt', '', ['get_date_field', '>', value]],
-                                     [r'^>=([0-9]+)$', '__gte', '', ['get_date_field', '>=', value]],
-                                     [r'^<([0-9]+)$', '__lt', '', ['get_date_field', '<', value]],
-                                     [r'^<=([0-9]+)$', '__lte', '', ['get_date_field', '<=', value]]],
-                       'ArrayField': [[r'^_eq(\d+)$', '__len'],
-                                      [r'^_gt(\d+)$', '__len__gt'],
-                                      [r'^(.+)$', '__contains']],
-                       'NullBooleanField': [[r'^([tT]rue)$', '', True], [r'^([fF]alse)$', '', None]],
-                       'BooleanField': [[r'^([tT]rue)$', '', True], [r'^([fF]alse)$', '', False]],
-                       # this assumes that the search is for the value in the JSON field and that that
-                       # values is text or char there are more searches specific to JSON fields such as
-                       # presence of key which we do not support yet
-                       'JSONField': [[r'^([^*|]+)\*$', '__startswith'], [r'^([^*|]+)\*\|i$', '__istartswith'],
-                                     [r'^\*([^*|]+)$', '__endswith'], [r'^\*([^*|]+)\|i$', '__iendswith'],
-                                     [r'^\*([^*|]+)\*$', '__contains'], [r'^\*([^*|]+)\*\|i$', '__icontains'],
-                                     [r'^([^*|]+)\|i$', '__iexact']],
-                       'ForeignKey': [],
-                       'ManyToManyField': []
-                       }
+        'CharField': [
+            [r'^([^*|]+)\*$', '__startswith'],
+            [r'^([^*|]+)\*\|i$', '__istartswith'],
+            [r'^\*([^*|]+)$', '__endswith'],
+            [r'^\*([^*|]+)\|i$', '__iendswith'],
+            [r'^\*([^*|]+)\*$', '__contains'],
+            [r'^\*([^*|]+)\*\|i$', '__icontains'],
+            [r'^([^*|]+)\|i$', '__iexact'],
+        ],
+        'TextField': [
+            [r'^([^*|]+)\*$', '__startswith'],
+            [r'^([^*|]+)\*\|i$', '__istartswith'],
+            [r'^\*([^*|]+)$', '__endswith'],
+            [r'^\*([^*|]+)\|i$', '__iendswith'],
+            [r'^\*([^*|]+)\*$', '__contains'],
+            [r'^\*([^*|]+)\*\|i$', '__icontains'],
+            [r'^([^*|]+)\|i$', '__iexact'],
+        ],
+        'IntegerField': [
+            [r'^>([0-9]+)$', '__gt'],
+            [r'^>=([0-9]+)$', '__gte'],
+            [r'^<([0-9]+)$', '__lt'],
+            [r'^<=([0-9]+)$', '__lte'],
+        ],
+        'DateField': [
+            [r'^>([0-9]+)$', '__gt', '', ['get_date_field', '>', value]],
+            [r'^>=([0-9]+)$', '__gte', '', ['get_date_field', '>=', value]],
+            [r'^<([0-9]+)$', '__lt', '', ['get_date_field', '<', value]],
+            [r'^<=([0-9]+)$', '__lte', '', ['get_date_field', '<=', value]],
+        ],
+        'ArrayField': [[r'^_eq(\d+)$', '__len'], [r'^_gt(\d+)$', '__len__gt'], [r'^(.+)$', '__contains']],
+        'NullBooleanField': [[r'^([tT]rue)$', '', True], [r'^([fF]alse)$', '', None]],
+        'BooleanField': [[r'^([tT]rue)$', '', True], [r'^([fF]alse)$', '', False]],
+        # this assumes that the search is for the value in the JSON field and that that
+        # values is text or char there are more searches specific to JSON fields such as
+        # presence of key which we do not support yet
+        'JSONField': [
+            [r'^([^*|]+)\*$', '__startswith'],
+            [r'^([^*|]+)\*\|i$', '__istartswith'],
+            [r'^\*([^*|]+)$', '__endswith'],
+            [r'^\*([^*|]+)\|i$', '__iendswith'],
+            [r'^\*([^*|]+)\*$', '__contains'],
+            [r'^\*([^*|]+)\*\|i$', '__icontains'],
+            [r'^([^*|]+)\|i$', '__iexact'],
+        ],
+        'ForeignKey': [],
+        'ManyToManyField': [],
+    }
     options = []
 
     if field_type in operator_lookup:
@@ -187,7 +207,6 @@ def get_field_filters(queryDict, model_instance, type):
 
 
 class SelectPagePaginator(LimitOffsetPagination):
-
     def paginate_queryset_and_get_page(self, queryset, request, view=None, index_required=None):
         self.limit = self.get_limit(request)
 
@@ -198,8 +217,8 @@ class SelectPagePaginator(LimitOffsetPagination):
         self.count = get_count(queryset)
 
         if index_required is not None:
-            page = int(index_required/self.limit)
-            self.offset = page*self.limit
+            page = int(index_required / self.limit)
+            self.offset = page * self.limit
 
         self.request = request
         if self.count > self.limit and self.template is not None:
@@ -208,7 +227,7 @@ class SelectPagePaginator(LimitOffsetPagination):
         if self.count == 0 or self.offset > self.count:
             return []
 
-        return (list(queryset[self.offset:self.offset + self.limit]), self.offset)
+        return (list(queryset[self.offset : self.offset + self.limit]), self.offset)
 
 
 """
@@ -222,9 +241,8 @@ I have tried to specify things in the model itself and then call them from here
 
 @method_decorator(apply_model_get_restrictions, name='dispatch')
 class ItemList(generics.ListAPIView):
-
-    permission_classes = (permissions.AllowAny, )
-    renderer_classes = (JSONRenderer, )
+    permission_classes = (permissions.AllowAny,)
+    renderer_classes = (JSONRenderer,)
     pagination_class = SelectPagePaginator
 
     def get_serializer_class(self):
@@ -243,7 +261,6 @@ class ItemList(generics.ListAPIView):
         return serializer_class(*args, **kwargs)
 
     def get_queryset(self, fields=None):
-
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
         try:
             related_keys = target.RELATED_KEYS
@@ -291,20 +308,18 @@ class ItemList(generics.ListAPIView):
         return item_position
 
     def paginate_queryset_and_get_page(self, queryset, index_required=None):
-        """
-        Return a single page of results, or `None` if pagination is disabled.
+        """Return a single page of results, or `None` if pagination is disabled.
         """
         if self.paginator is None:
             return None
         if index_required is not None:
-            return self.paginator.paginate_queryset_and_get_page(queryset,
-                                                                 self.request,
-                                                                 view=self,
-                                                                 index_required=index_required)
+            return self.paginator.paginate_queryset_and_get_page(
+                queryset, self.request, view=self, index_required=index_required
+            )
 
-# If you do also need post here then this will work - it is disabled now until we need it
-#     def post(self, request, app, model):
-#         return self.get(request, app, model)
+    # If you do also need post here then this will work - it is disabled now until we need it
+    #     def post(self, request, app, model):
+    #         return self.get(request, app, model)
 
     def get_objects(self, request, **kwargs):
         self.kwargs = kwargs
@@ -332,8 +347,7 @@ class ItemList(generics.ListAPIView):
 # runs get_queryset before running the get function and get_queryset adds fields to self.kwargs.
 # Do not merge this with the ItemList view as it will break it.
 class PrivateItemList(ItemList):
-
-    permission_classes = (permissions.DjangoModelPermissions, )
+    permission_classes = (permissions.DjangoModelPermissions,)
 
     def get(self, request, app, model, supplied_filter=None, fields=None):
         return self.list(request)
@@ -341,9 +355,8 @@ class PrivateItemList(ItemList):
 
 @method_decorator(apply_model_get_restrictions, name='dispatch')
 class ItemDetail(generics.RetrieveAPIView):
-
-    permission_classes = (permissions.AllowAny, )
-    renderer_classes = (JSONRenderer, )
+    permission_classes = (permissions.AllowAny,)
+    renderer_classes = (JSONRenderer,)
 
     def get_queryset(self):
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
@@ -383,9 +396,9 @@ class ItemDetail(generics.RetrieveAPIView):
     def get(self, request, app, model, pk, supplied_filter=None):
         return self.retrieve(request)
 
-# If you do also need post here then this will work - it is disabled now until we need it
-#     def post(self, request, app, model, pk):
-#         return self.get(request, app, model, pk)
+    # If you do also need post here then this will work - it is disabled now until we need it
+    #     def post(self, request, app, model, pk):
+    #         return self.get(request, app, model, pk)
 
     # this one is used by the html interface
     def get_item(self, request, **kwargs):
@@ -407,14 +420,12 @@ class ItemDetail(generics.RetrieveAPIView):
 
 
 class PrivateItemDetail(ItemDetail):
-
-    permission_classes = (permissions.DjangoModelPermissions, )
+    permission_classes = (permissions.DjangoModelPermissions,)
 
 
 @method_decorator(etag(get_etag), name='dispatch')
 class ItemUpdate(generics.UpdateAPIView):
-
-    permission_classes = (permissions.DjangoModelPermissions, )
+    permission_classes = (permissions.DjangoModelPermissions,)
 
     def get_serializer_class(self):
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
@@ -423,8 +434,7 @@ class ItemUpdate(generics.UpdateAPIView):
         return serializer
 
     def get_serializer(self, *args, **kwargs):
-        """
-        Return the serializer instance that should be used for validating and
+        """Return the serializer instance that should be used for validating and
         deserializing input, and for serializing output.
         """
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
@@ -455,17 +465,19 @@ class ItemUpdate(generics.UpdateAPIView):
             current = jsontools.dumps(json, sort_keys=True)
             if current != new:
                 data['last_modified_time'] = datetime.datetime.now()
-                if (django_settings.USER_IDENTIFIER_FIELD and
-                        (hasattr(request.user, django_settings.USER_IDENTIFIER_FIELD) and
-                            getattr(request.user, django_settings.USER_IDENTIFIER_FIELD) != '')):
+                if django_settings.USER_IDENTIFIER_FIELD and (
+                    hasattr(request.user, django_settings.USER_IDENTIFIER_FIELD)
+                    and getattr(request.user, django_settings.USER_IDENTIFIER_FIELD) != ''
+                ):
                     data['last_modified_by'] = getattr(request.user, django_settings.USER_IDENTIFIER_FIELD)
                 else:
                     data['last_modified_by'] = request.user.username
         else:
             data['last_modified_time'] = datetime.datetime.now()
-            if (django_settings.USER_IDENTIFIER_FIELD and
-                    (hasattr(request.user, django_settings.USER_IDENTIFIER_FIELD) and
-                        getattr(request.user, django_settings.USER_IDENTIFIER_FIELD) != '')):
+            if django_settings.USER_IDENTIFIER_FIELD and (
+                hasattr(request.user, django_settings.USER_IDENTIFIER_FIELD)
+                and getattr(request.user, django_settings.USER_IDENTIFIER_FIELD) != ''
+            ):
                 data['last_modified_by'] = getattr(request.user, django_settings.USER_IDENTIFIER_FIELD)
             else:
                 data['last_modified_by'] = request.user.username
@@ -493,8 +505,7 @@ class ItemUpdate(generics.UpdateAPIView):
 
 
 class ItemCreate(generics.CreateAPIView):
-
-    permission_classes = (permissions.DjangoModelPermissions, )
+    permission_classes = (permissions.DjangoModelPermissions,)
 
     def get_serializer_class(self):
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
@@ -503,8 +514,7 @@ class ItemCreate(generics.CreateAPIView):
         return serializer
 
     def get_serializer(self, *args, **kwargs):
-        """
-        Return the serializer instance that should be used for validating and
+        """Return the serializer instance that should be used for validating and
         deserializing input, and for serializing output.
         """
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
@@ -524,9 +534,10 @@ class ItemCreate(generics.CreateAPIView):
         self.kwargs = kwargs
         data = request.data
         data['created_time'] = datetime.datetime.now()
-        if (django_settings.USER_IDENTIFIER_FIELD and
-                (hasattr(request.user, django_settings.USER_IDENTIFIER_FIELD) and
-                    getattr(request.user, django_settings.USER_IDENTIFIER_FIELD) != '')):
+        if django_settings.USER_IDENTIFIER_FIELD and (
+            hasattr(request.user, django_settings.USER_IDENTIFIER_FIELD)
+            and getattr(request.user, django_settings.USER_IDENTIFIER_FIELD) != ''
+        ):
             data['created_by'] = getattr(request.user, django_settings.USER_IDENTIFIER_FIELD)
         else:
             data['created_by'] = request.user.username
@@ -548,8 +559,7 @@ class ItemCreate(generics.CreateAPIView):
 
 
 class ItemDelete(generics.DestroyAPIView):
-
-    permission_classes = (permissions.DjangoModelPermissions, )
+    permission_classes = (permissions.DjangoModelPermissions,)
 
     def get_queryset(self):
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
@@ -564,7 +574,7 @@ class ItemDelete(generics.DestroyAPIView):
 
 class M2MItemDelete(generics.UpdateAPIView):
     # this is called as a PATCH as although it does delete the link it updates the target object
-    permission_classes = (permissions.DjangoModelPermissions, )
+    permission_classes = (permissions.DjangoModelPermissions,)
 
     def get_queryset(self):
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
@@ -578,9 +588,10 @@ class M2MItemDelete(generics.UpdateAPIView):
         author = apps.get_model(self.kwargs['app'], self.kwargs['itemmodel']).objects.get(pk=self.kwargs['itempk'])
         getattr(instance, self.kwargs['fieldname']).remove(author)
         instance.last_modified_time = datetime.datetime.now()
-        if (django_settings.USER_IDENTIFIER_FIELD and
-                (hasattr(request.user, django_settings.USER_IDENTIFIER_FIELD) and
-                    getattr(request.user, django_settings.USER_IDENTIFIER_FIELD) != '')):
+        if django_settings.USER_IDENTIFIER_FIELD and (
+            hasattr(request.user, django_settings.USER_IDENTIFIER_FIELD)
+            and getattr(request.user, django_settings.USER_IDENTIFIER_FIELD) != ''
+        ):
             instance.last_modified_by = getattr(request.user, django_settings.USER_IDENTIFIER_FIELD)
         else:
             instance.last_modified_by = request.user.username

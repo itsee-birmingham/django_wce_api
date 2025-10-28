@@ -1,9 +1,8 @@
-from rest_framework import serializers
 from django.apps import apps
+from rest_framework import serializers
 
 
 class SimpleSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = None
         fields = ()
@@ -25,7 +24,6 @@ class SimpleSerializer(serializers.ModelSerializer):
 
 
 class BaseModelSerializer(serializers.ModelSerializer):
-
     def __init__(self, *args, **kwargs):
         if kwargs:
             partial = kwargs.pop('partial', False)
