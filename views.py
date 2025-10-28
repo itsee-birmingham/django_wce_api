@@ -82,6 +82,7 @@ I have tried to specify things in the model itself and then call them from here
 @method_decorator(apply_model_get_restrictions, name='dispatch')
 class ItemList(generics.ListAPIView):
     """Concrete view for listing a queryset."""
+
     permission_classes = (permissions.AllowAny,)
     renderer_classes = (JSONRenderer,)
     pagination_class = SelectPagePaginator
@@ -200,6 +201,7 @@ class ItemList(generics.ListAPIView):
 # Do not merge this with the ItemList view as it will break it.
 class PrivateItemList(ItemList):
     """Concrete view for listing a queryset of a private model."""
+
     permission_classes = (permissions.DjangoModelPermissions,)
 
     def get(self, request, app, model, supplied_filter=None, fields=None):
@@ -210,6 +212,7 @@ class PrivateItemList(ItemList):
 @method_decorator(apply_model_get_restrictions, name='dispatch')
 class ItemDetail(generics.RetrieveAPIView):
     """Concrete view for retrieving a model instance."""
+
     permission_classes = (permissions.AllowAny,)
     renderer_classes = (JSONRenderer,)
 
@@ -286,12 +289,14 @@ class ItemDetail(generics.RetrieveAPIView):
 
 class PrivateItemDetail(ItemDetail):
     """Concrete view for retrieving a private model instance."""
+
     permission_classes = (permissions.DjangoModelPermissions,)
 
 
 @method_decorator(etag(_get_etag), name='dispatch')
 class ItemUpdate(generics.UpdateAPIView):
     """Concrete view for updating a model instance."""
+
     permission_classes = (permissions.DjangoModelPermissions,)
 
     def get_serializer_class(self):
@@ -374,6 +379,7 @@ class ItemUpdate(generics.UpdateAPIView):
 
 class ItemCreate(generics.CreateAPIView):
     """Concrete view for creating a model instance."""
+
     permission_classes = (permissions.DjangoModelPermissions,)
 
     def get_serializer_class(self):
@@ -431,6 +437,7 @@ class ItemCreate(generics.CreateAPIView):
 
 class ItemDelete(generics.DestroyAPIView):
     """Concrete view for deleting a model instance."""
+
     permission_classes = (permissions.DjangoModelPermissions,)
 
     def get_queryset(self):
@@ -448,6 +455,7 @@ class ItemDelete(generics.DestroyAPIView):
 
 class M2MItemDelete(generics.UpdateAPIView):
     """Concrete view for delete M2M relation and updating a model instance."""
+
     # this is called as a PATCH as although it does delete the link, it also updates the target object
     permission_classes = (permissions.DjangoModelPermissions,)
 

@@ -38,6 +38,7 @@ class BaseModelSerializer(serializers.ModelSerializer):
     specification of data in the `__init__` function. This was done to allow the required fields to be specified. This
     can be important when requesting large numbers of records to control the size of the data returned.
     """
+
     def __init__(self, *args, **kwargs):
         if kwargs:
             partial = kwargs.pop('partial', False)
