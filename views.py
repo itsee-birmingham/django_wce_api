@@ -2,12 +2,10 @@ import copy
 import datetime
 import importlib
 import json as jsontools
-import re
 
 from accounts.serializers import UserSerializer
 from django.apps import apps
 from django.conf import settings as django_settings
-from django.db.models import Q
 from django.db.models.deletion import ProtectedError
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
@@ -18,17 +16,11 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
 from api.decorators import apply_model_get_restrictions
+from api.search_helpers import get_field_filters
 from api.serializers import SimpleSerializer
 
 
-def get_user(request):
-    if request.user.is_anonymous:
-        return JsonResponse({'message': "Authentication required"}, status=401)
-    serializer = UserSerializer(request.user)
-    return JsonResponse(serializer.data)
-
-
-def get_etag(request, app=None, model=None, pk=None):
+def _get_etag(request, app=None, model=None, pk=None):
     try:
         etag = str(apps.get_model(app, model).objects.get(pk=pk).version_number)
         return etag
@@ -36,173 +28,19 @@ def get_etag(request, app=None, model=None, pk=None):
         return "*"
 
 
-def get_count(queryset):
-    """Determine an object count, supporting either querysets or regular lists."""
-    try:
-        return queryset.count()
-    except TypeError:
-        return len(queryset)
+def get_user(request):
+    """Return the current user profile information.
 
+    Args:
+        request (django.http.HttpRequest): The current request.
 
-def get_date_field(operator, value):
-    value = value.replace(operator, '')
-    try:
-        date = datetime.datetime.strptime(value, '%Y').date()
-        if operator in ['<', '<=']:
-            date = date.replace(month=12, day=31)
-    except ValueError:
-        date = value
-    return date
-
-
-def get_query_tuple(field_type, field, value):
-    operator_lookup = {
-        'CharField': [
-            [r'^([^*|]+)\*$', '__startswith'],
-            [r'^([^*|]+)\*\|i$', '__istartswith'],
-            [r'^\*([^*|]+)$', '__endswith'],
-            [r'^\*([^*|]+)\|i$', '__iendswith'],
-            [r'^\*([^*|]+)\*$', '__contains'],
-            [r'^\*([^*|]+)\*\|i$', '__icontains'],
-            [r'^([^*|]+)\|i$', '__iexact'],
-        ],
-        'TextField': [
-            [r'^([^*|]+)\*$', '__startswith'],
-            [r'^([^*|]+)\*\|i$', '__istartswith'],
-            [r'^\*([^*|]+)$', '__endswith'],
-            [r'^\*([^*|]+)\|i$', '__iendswith'],
-            [r'^\*([^*|]+)\*$', '__contains'],
-            [r'^\*([^*|]+)\*\|i$', '__icontains'],
-            [r'^([^*|]+)\|i$', '__iexact'],
-        ],
-        'IntegerField': [
-            [r'^>([0-9]+)$', '__gt'],
-            [r'^>=([0-9]+)$', '__gte'],
-            [r'^<([0-9]+)$', '__lt'],
-            [r'^<=([0-9]+)$', '__lte'],
-        ],
-        'DateField': [
-            [r'^>([0-9]+)$', '__gt', '', ['get_date_field', '>', value]],
-            [r'^>=([0-9]+)$', '__gte', '', ['get_date_field', '>=', value]],
-            [r'^<([0-9]+)$', '__lt', '', ['get_date_field', '<', value]],
-            [r'^<=([0-9]+)$', '__lte', '', ['get_date_field', '<=', value]],
-        ],
-        'ArrayField': [[r'^_eq(\d+)$', '__len'], [r'^_gt(\d+)$', '__len__gt'], [r'^(.+)$', '__contains']],
-        'NullBooleanField': [[r'^([tT]rue)$', '', True], [r'^([fF]alse)$', '', None]],
-        'BooleanField': [[r'^([tT]rue)$', '', True], [r'^([fF]alse)$', '', False]],
-        # this assumes that the search is for the value in the JSON field and that that
-        # values is text or char there are more searches specific to JSON fields such as
-        # presence of key which we do not support yet
-        'JSONField': [
-            [r'^([^*|]+)\*$', '__startswith'],
-            [r'^([^*|]+)\*\|i$', '__istartswith'],
-            [r'^\*([^*|]+)$', '__endswith'],
-            [r'^\*([^*|]+)\|i$', '__iendswith'],
-            [r'^\*([^*|]+)\*$', '__contains'],
-            [r'^\*([^*|]+)\*\|i$', '__icontains'],
-            [r'^([^*|]+)\|i$', '__iexact'],
-        ],
-        'ForeignKey': [],
-        'ManyToManyField': [],
-    }
-    options = []
-
-    if field_type in operator_lookup:
-        options = operator_lookup[field_type]
-    for option in options:
-        if re.search(option[0], value):
-            if len(option) > 3:
-                value = globals()[option[3][0]](option[3][1], option[3][2])
-                return ('%s%s' % (field, option[1]), value)
-            elif len(option) > 2:
-                return ('%s%s' % (field, option[1]), option[2])
-            elif field_type == 'ArrayField' and '__len' not in option[1]:
-                return ('%s%s' % (field, option[1]), [value])
-            else:
-                return ('%s%s' % (field, option[1]), re.sub(option[0], '\\1', value))
-    if value != '' and field != '' and field_type:
-        return (field, value)
-    return None
-
-
-def get_related_model(model_instance, field_name):
-    if '__' in field_name:
-        field_name = field_name.split('__')[0]
-    return model_instance._meta.get_field(field_name).related_model
-
-
-def get_related_field_type(model, field):
-    if len(field.split('__')) < 2:
-        return None
-    related_model = get_related_model(model, field)
-    if related_model.__name__ == 'User':  # It is not safe to rely on duck typing here
-        # It doesn't really make sense to search user on anything but id but other fields can be included here if they
-        # are needed
-        related_fields = {'id': 'AutoField'}
-    else:
-        related_fields = related_model.get_fields()
-    if '__' in field and field.split('__')[1] in related_fields:
-        field_type = related_fields[field.split('__')[1]]
-        if field_type not in ['ForeignKey', 'ManyToManyField']:
-            return field_type
-        else:
-            return get_related_field_type(related_model, '__'.join(field.split('__')[1:]))
-    else:
-        return None
-
-
-def get_field_filters(queryDict, model_instance, type):
-    model_fields = model_instance.get_fields()
-    query = Q()
-    additional_queries = []
-    query_tuple = None
-    m2m_list = []
-    for field in queryDict:
-        if field == 'project':
-            # project used to be in the list below and I have removed it because
-            # we might need to filter by project for some things
-            print('Project used to be filtered out - check why it was needed and adjust query if necessary!')
-        if field not in ['offset', 'limit'] and field[0] != '_':
-            if field in model_fields:
-                field_type = model_fields[field]
-            elif '__' in field and field.split('__')[0] in model_fields:
-                field_type = model_fields[field.split('__')[0]]
-            else:
-                field_type = None
-            if field_type == 'ForeignKey' or field_type == 'ManyToManyField':
-                m2m_list.append(field.split('__')[0])
-                field_type = get_related_field_type(model_instance, field)
-            value_list = queryDict[field]
-            # we do not support negation with OR so these are only done when we are filtering
-            # I just don't think or-ing negatives on the same field key makes any sense
-            for i, value in enumerate(value_list):
-                # these are the OR fields
-                if ',' in value:
-                    if type == 'filter':
-                        subquery = Q()
-                        for part in value.split(','):
-                            if part != '':
-                                query_tuple = get_query_tuple(field_type, field, part)
-                                if query_tuple:
-                                    subquery |= Q(query_tuple)
-                                    query_tuple = None
-                        query &= subquery
-                else:
-                    # these are the AND fields
-                    if value != '':
-                        if type == 'exclude' and value[0] == '!':
-                            query_tuple = get_query_tuple(field_type, field, value[1:])
-                        elif type == 'filter' and value[0] != '!':
-                            query_tuple = get_query_tuple(field_type, field, value)
-                        if query_tuple and (i == 0 or field.split('__')[0] not in m2m_list):
-                            query &= Q(query_tuple)
-                            query_tuple = None
-                        elif query_tuple:
-                            additional_queries.append(Q(query_tuple))
-
-    queries = [query]
-    queries.extend(additional_queries)
-    return queries
+    Returns:
+        JSONResponse: The profile information for the current user.
+    """
+    if request.user.is_anonymous:
+        return JsonResponse({'message': "Authentication required"}, status=401)
+    serializer = UserSerializer(request.user)
+    return JsonResponse(serializer.data)
 
 
 class SelectPagePaginator(LimitOffsetPagination):
@@ -213,7 +51,7 @@ class SelectPagePaginator(LimitOffsetPagination):
             return None
 
         self.offset = self.get_offset(request)
-        self.count = get_count(queryset)
+        self.count = len(queryset)
 
         if index_required is not None:
             page = int(index_required / self.limit)
@@ -421,7 +259,7 @@ class PrivateItemDetail(ItemDetail):
     permission_classes = (permissions.DjangoModelPermissions,)
 
 
-@method_decorator(etag(get_etag), name='dispatch')
+@method_decorator(etag(_get_etag), name='dispatch')
 class ItemUpdate(generics.UpdateAPIView):
     permission_classes = (permissions.DjangoModelPermissions,)
 

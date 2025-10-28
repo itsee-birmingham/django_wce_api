@@ -2,7 +2,7 @@ from django.apps import apps
 from django.db.models import Q
 from django.http import JsonResponse
 
-from api import views as api_views
+from api.search_helpers import get_query_tuple
 
 # TODO: might want something similar so people can only write to their own data in some models
 # this only deals with getting things back since all writing requires login so it not open
@@ -77,7 +77,7 @@ def apply_model_get_restrictions(function):
             query = Q()
             query |= Q(('public', True))
             for field in user_fields:
-                query_tuple = api_views.get_query_tuple(user_fields[field], field, request.user)
+                query_tuple = get_query_tuple(user_fields[field], field, request.user)
                 query |= Q(('project__%s' % (query_tuple[0]), query_tuple[1]))
 
             kwargs['supplied_filter'] = query
@@ -119,7 +119,7 @@ def apply_model_get_restrictions(function):
 
             query = Q()
             for field in user_fields:
-                query_tuple = api_views.get_query_tuple(user_fields[field], field, request.user)
+                query_tuple = get_query_tuple(user_fields[field], field, request.user)
                 query |= Q(('project__%s' % (query_tuple[0]), query_tuple[1]))
             kwargs['supplied_filter'] = query
             return function(request, *args, **kwargs)
@@ -147,9 +147,9 @@ def apply_model_get_restrictions(function):
             user_fields = project_model.get_user_fields()
 
             # first add the user as a field since this is project_or_user
-            query = Q(api_views.get_query_tuple('ForeignKey', 'user', request.user))
+            query = Q(get_query_tuple('ForeignKey', 'user', request.user))
             for field in user_fields:
-                query_tuple = api_views.get_query_tuple(user_fields[field], field, request.user)
+                query_tuple = get_query_tuple(user_fields[field], field, request.user)
                 query |= Q(('project__%s' % (query_tuple[0]), query_tuple[1]))
 
             kwargs['supplied_filter'] = query
