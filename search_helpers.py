@@ -16,13 +16,61 @@ def _get_date_field(operator, value):
 
 
 def get_related_model(model_instance, field_name):
-    """Get the model for a relational field."""
+    """Get the model of a relational field.
+
+    Args:
+        model_instance (django.db.models.Model): The model containing the relational field.
+        field_name (str): The relational field name.
+
+    Returns:
+        django.db.models.Model: The model which the relationa field references (of the model_instance if the field is
+            not relational).
+    """
     if '__' in field_name:
         field_name = field_name.split('__')[0]
     return model_instance._meta.get_field(field_name).related_model
 
 
+def get_related_field_type(model, field):
+    """Return the data type of the related field.
+
+    Args:
+        model (django.db.models.Model): The model containing the relational field.
+        field (str): The field name to find the type of.
+
+    Returns:
+        str: The data type of the related field.
+    """
+    if len(field.split('__')) < 2:
+        return None
+    related_model = get_related_model(model, field)
+    if related_model.__name__ == 'User':  # It is not safe to rely on duck typing here
+        # It doesn't really make sense to search user on anything but id but other fields can be included here if they
+        # are needed
+        related_fields = {'id': 'AutoField'}
+    else:
+        related_fields = related_model.get_fields()
+    if '__' in field and field.split('__')[1] in related_fields:
+        field_type = related_fields[field.split('__')[1]]
+        if field_type not in ['ForeignKey', 'ManyToManyField']:
+            return field_type
+        else:
+            return get_related_field_type(related_model, '__'.join(field.split('__')[1:]))
+    else:
+        return None
+
+
 def get_query_tuple(field_type, field, value):
+    """Return a tuple of field and value for use in a django query based on the api request submitted.
+
+    Args:
+        field_type (str): The data type of the field for the query.
+        field (str): The field name to use in the query.
+        value (str): The value to search for in the query with the shorthand used in the api.
+
+    Returns:
+        tuple|None: The tuple containing the field and the value to use in the query or None if one can't be created.
+    """
     operator_lookup = {
         'CharField': [
             [r'^([^*|]+)\*$', '__startswith'],
@@ -93,6 +141,16 @@ def get_query_tuple(field_type, field, value):
 
 
 def get_field_filters(queryDict, model_instance, type):
+    """Create the queries to use as filters.
+
+    Args:
+        queryDict (dict): The query doctionary from the api call.
+        model_instance (django.db.models.Model): The model being filtered.
+        type (str): A string describing the type of filter required: either `exclude` or `filter`.
+
+    Returns:
+        list: A list of django.db.models.Q objects.
+    """
     model_fields = model_instance.get_fields()
     query = Q()
     additional_queries = []
@@ -144,23 +202,3 @@ def get_field_filters(queryDict, model_instance, type):
     queries = [query]
     queries.extend(additional_queries)
     return queries
-
-
-def get_related_field_type(model, field):
-    if len(field.split('__')) < 2:
-        return None
-    related_model = get_related_model(model, field)
-    if related_model.__name__ == 'User':  # It is not safe to rely on duck typing here
-        # It doesn't really make sense to search user on anything but id but other fields can be included here if they
-        # are needed
-        related_fields = {'id': 'AutoField'}
-    else:
-        related_fields = related_model.get_fields()
-    if '__' in field and field.split('__')[1] in related_fields:
-        field_type = related_fields[field.split('__')[1]]
-        if field_type not in ['ForeignKey', 'ManyToManyField']:
-            return field_type
-        else:
-            return get_related_field_type(related_model, '__'.join(field.split('__')[1:]))
-    else:
-        return None
