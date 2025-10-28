@@ -4,12 +4,13 @@ from django.http import JsonResponse
 
 from api.search_helpers import get_query_tuple
 
-# TODO: might want something similar so people can only write to their own data in some models
-# this only deals with getting things back since all writing requires login so it not open
-
 
 def apply_model_get_restrictions(function):
-    """Apply model restrictions to the data returned by the API."""
+    """Apply model restrictions to the data returned by the API.
+
+    This only deals with getting things back since all writing requires login so it not open.
+    Might want something similar so people can only write to their own data in some models.
+    """
 
     def wrap(request, *args, **kwargs):
         target = apps.get_model(kwargs['app'], kwargs['model'])
