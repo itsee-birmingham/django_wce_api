@@ -1,0 +1,54 @@
+line-length = 120
+exclude = [
+    "migrations",
+    "management/commands/archive",
+]
+
+
+[format]
+quote-style = "preserve"
+
+
+[lint]
+select = [
+    # Pyflakes
+    "F",
+    # pycodestyle errors
+    "E",
+    # pycodestyle warnings
+    "W",
+    # isort
+    "I",
+    # pydocstyle
+    "D",
+]
+
+ignore = [
+    "D100",
+    "D104",
+    "D105",
+    "D106",
+    "D107",
+]
+
+
+[lint.extend-per-file-ignores]
+
+"apps.py" = [
+    "D101",  # missing docstring in public class
+    "D102",  # missing docstring in public method
+]
+
+"management/commands/*.py" = [
+    "D102",  # missing docstring in public method
+]
+
+"serializers.py" = [
+   	"D101",  # missing docstring in public class
+	"D102",  # missing docstring in public method
+	"D103",  # missing docstring in public function    
+]
+
+
+[lint.pydocstyle]
+convention = "google"
