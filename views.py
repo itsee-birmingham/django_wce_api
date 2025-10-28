@@ -37,8 +37,7 @@ def get_etag(request, app=None, model=None, pk=None):
 
 
 def get_count(queryset):
-    """Determine an object count, supporting either querysets or regular lists.
-    """
+    """Determine an object count, supporting either querysets or regular lists."""
     try:
         return queryset.count()
     except TypeError:
@@ -308,8 +307,7 @@ class ItemList(generics.ListAPIView):
         return item_position
 
     def paginate_queryset_and_get_page(self, queryset, index_required=None):
-        """Return a single page of results, or `None` if pagination is disabled.
-        """
+        """Return a single page of results, or `None` if pagination is disabled."""
         if self.paginator is None:
             return None
         if index_required is not None:
