@@ -44,7 +44,10 @@ def get_user(request):
 
 
 class SelectPagePaginator(LimitOffsetPagination):
+    """A paginator which can select a page based on a page number (not offset)."""
+
     def paginate_queryset_and_get_page(self, queryset, request, view=None, index_required=None):
+        """Return the portion of the query set representing the requested page."""
         self.limit = self.get_limit(request)
 
         if self.limit is None:
@@ -78,11 +81,13 @@ I have tried to specify things in the model itself and then call them from here
 
 @method_decorator(apply_model_get_restrictions, name='dispatch')
 class ItemList(generics.ListAPIView):
+    """Concrete view for listing a queryset."""
     permission_classes = (permissions.AllowAny,)
     renderer_classes = (JSONRenderer,)
     pagination_class = SelectPagePaginator
 
     def get_serializer_class(self):
+        """Return the class to use for the serializer."""
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
         try:
             serializer_name = target.SERIALIZER
@@ -92,12 +97,14 @@ class ItemList(generics.ListAPIView):
         return serializer
 
     def get_serializer(self, *args, **kwargs):
+        """Return the serializer instance that should be used for validating and de/serializing input and output."""
         serializer_class = self.get_serializer_class()
         if 'fields' in self.kwargs:
             kwargs['fields'] = self.kwargs['fields']
         return serializer_class(*args, **kwargs)
 
     def get_queryset(self, fields=None):
+        """Get the list of items for this view."""
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
         try:
             related_keys = target.RELATED_KEYS
@@ -135,9 +142,14 @@ class ItemList(generics.ListAPIView):
         return hits
 
     def get(self, request, app, model, supplied_filter=None):
+        """Return the items.
+
+        This one is used by the regular api calls.
+        """
         return self.list(request)
 
-    def get_offset_required(self, queryset, item_id):
+    def _get_offset_required(self, queryset, item_id):
+        """Get the offset required so the item with `item_id` is on the page returned."""
         try:
             item_position = list(queryset.values_list('id', flat=True)).index(int(item_id))
         except Exception:
@@ -158,6 +170,10 @@ class ItemList(generics.ListAPIView):
     #         return self.get(request, app, model)
 
     def get_objects(self, request, **kwargs):
+        """Return the items.
+
+        This one is used by the html interface.
+        """
         self.kwargs = kwargs
         self.request = request
         if '_fields' in self.kwargs:
@@ -167,7 +183,7 @@ class ItemList(generics.ListAPIView):
 
         offset = None
         if '_show' in request.GET:
-            index = self.get_offset_required(queryset, request.GET.get('_show'))
+            index = self._get_offset_required(queryset, request.GET.get('_show'))
             (paginated_query_set, offset) = self.paginate_queryset_and_get_page(queryset, index_required=index)
         else:
             index = None
@@ -183,18 +199,22 @@ class ItemList(generics.ListAPIView):
 # runs get_queryset before running the get function and get_queryset adds fields to self.kwargs.
 # Do not merge this with the ItemList view as it will break it.
 class PrivateItemList(ItemList):
+    """Concrete view for listing a queryset of a private model."""
     permission_classes = (permissions.DjangoModelPermissions,)
 
     def get(self, request, app, model, supplied_filter=None, fields=None):
+        """Return the items."""
         return self.list(request)
 
 
 @method_decorator(apply_model_get_restrictions, name='dispatch')
 class ItemDetail(generics.RetrieveAPIView):
+    """Concrete view for retrieving a model instance."""
     permission_classes = (permissions.AllowAny,)
     renderer_classes = (JSONRenderer,)
 
     def get_queryset(self):
+        """Get the list of items for this view."""
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
         try:
             prefetch_keys = target.PREFETCH_KEYS
@@ -210,6 +230,7 @@ class ItemDetail(generics.RetrieveAPIView):
         return hits
 
     def get_serializer_class(self):
+        """Return the class to use for the serializer."""
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
         try:
             serializer_name = target.SERIALIZER
@@ -218,9 +239,11 @@ class ItemDetail(generics.RetrieveAPIView):
             serializer = SimpleSerializer
         return serializer
 
-    # this overrides the function provided by the drf RetrieveModelMixin
-    # so I can set the etag header in the response
     def retrieve(self, request, *args, **kwargs):
+        """Retrieve a model instance and set etag header in response.
+
+        This overrides the function provided by the drf RetrieveModelMixin to setthe etag header in the response.
+        """
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         try:
@@ -228,16 +251,22 @@ class ItemDetail(generics.RetrieveAPIView):
         except (AttributeError, TypeError):
             return Response(serializer.data)
 
-    # this one is used by the regular api calls
     def get(self, request, app, model, pk, supplied_filter=None):
+        """Return the item.
+
+        This one is used by the regular api calls.
+        """
         return self.retrieve(request)
 
     # If you do also need post here then this will work - it is disabled now until we need it
     #     def post(self, request, app, model, pk):
     #         return self.get(request, app, model, pk)
 
-    # this one is used by the html interface
     def get_item(self, request, **kwargs):
+        """Return the item.
+
+        This one is used by the html interface.
+        """
         self.kwargs = kwargs
         # this next line is what returns the 500 error if the item cannot be viewed
         # in the project - it never gets beyond this line
@@ -256,23 +285,24 @@ class ItemDetail(generics.RetrieveAPIView):
 
 
 class PrivateItemDetail(ItemDetail):
+    """Concrete view for retrieving a private model instance."""
     permission_classes = (permissions.DjangoModelPermissions,)
 
 
 @method_decorator(etag(_get_etag), name='dispatch')
 class ItemUpdate(generics.UpdateAPIView):
+    """Concrete view for updating a model instance."""
     permission_classes = (permissions.DjangoModelPermissions,)
 
     def get_serializer_class(self):
+        """Return the class to use for the serializer."""
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
         serializer_name = target.SERIALIZER
         serializer = getattr(importlib.import_module('%s.serializers' % self.kwargs['app']), serializer_name)
         return serializer
 
     def get_serializer(self, *args, **kwargs):
-        """Return the serializer instance that should be used for validating and
-        deserializing input, and for serializing output.
-        """
+        """Return the serializer instance that should be used for validating and de/serializing input and output."""
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
         serializer_class = self.get_serializer_class()
         fields = copy.deepcopy(target.REQUIRED_FIELDS)
@@ -283,10 +313,12 @@ class ItemUpdate(generics.UpdateAPIView):
         return serializer_class(*args, **kwargs)
 
     def get_queryset(self):
+        """Get the list of items for this view."""
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
         return target.objects.all()
 
     def update(self, request, *args, **kwargs):
+        """Update the item."""
         partial = kwargs.pop('partial', False)
 
         instance = self.get_object()
@@ -341,18 +373,18 @@ class ItemUpdate(generics.UpdateAPIView):
 
 
 class ItemCreate(generics.CreateAPIView):
+    """Concrete view for creating a model instance."""
     permission_classes = (permissions.DjangoModelPermissions,)
 
     def get_serializer_class(self):
+        """Return the class to use for the serializer."""
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
         serializer_name = target.SERIALIZER
         serializer = getattr(importlib.import_module('%s.serializers' % self.kwargs['app']), serializer_name)
         return serializer
 
     def get_serializer(self, *args, **kwargs):
-        """Return the serializer instance that should be used for validating and
-        deserializing input, and for serializing output.
-        """
+        """Return the serializer instance that should be used for validating and de/serializing input and output."""
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
         serializer_class = self.get_serializer_class()
         fields = copy.deepcopy(target.REQUIRED_FIELDS)
@@ -363,10 +395,12 @@ class ItemCreate(generics.CreateAPIView):
         return serializer_class(*args, **kwargs)
 
     def get_queryset(self):
+        """Get the list of items for this view."""
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
         return target.objects.all()
 
     def create(self, request, *args, **kwargs):
+        """Create an item."""
         self.kwargs = kwargs
         data = request.data
         data['created_time'] = datetime.datetime.now()
@@ -390,18 +424,22 @@ class ItemCreate(generics.CreateAPIView):
         return Response(created_instance, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
+        """Create the model instance."""
         instance = serializer.save()
         return instance
 
 
 class ItemDelete(generics.DestroyAPIView):
+    """Concrete view for deleting a model instance."""
     permission_classes = (permissions.DjangoModelPermissions,)
 
     def get_queryset(self):
+        """Get the list of items for this view."""
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
         return target.objects.all()
 
     def delete(self, request, *args, **kwargs):
+        """Delete the item."""
         try:
             return self.destroy(request, *args, **kwargs)
         except ProtectedError:
@@ -409,18 +447,18 @@ class ItemDelete(generics.DestroyAPIView):
 
 
 class M2MItemDelete(generics.UpdateAPIView):
-    # this is called as a PATCH as although it does delete the link it updates the target object
+    """Concrete view for delete M2M relation and updating a model instance."""
+    # this is called as a PATCH as although it does delete the link, it also updates the target object
     permission_classes = (permissions.DjangoModelPermissions,)
 
     def get_queryset(self):
+        """Get the list of items for this view."""
         target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
         return target.objects.all()
 
     def update(self, request, *args, **kwargs):
-        # partial = kwargs.pop('partial', False)
-        # target = apps.get_model(self.kwargs['app'], self.kwargs['model'])
+        """Update the target object and delte the linked item."""
         instance = self.get_object()
-        # deletion_field = getattr(instance, self.kwargs['fieldname'])
         author = apps.get_model(self.kwargs['app'], self.kwargs['itemmodel']).objects.get(pk=self.kwargs['itempk'])
         getattr(instance, self.kwargs['fieldname']).remove(author)
         instance.last_modified_time = datetime.datetime.now()
