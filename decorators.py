@@ -9,7 +9,7 @@ def apply_model_get_restrictions(function):
     """Apply model restrictions to the data returned by the API.
 
     This only deals with getting things back since all writing requires login so it not open.
-    Might want something similar so people can only write to their own data in some models.
+        Note: A similar mechanism might be needed to restrict write access,    allowing users to modify only their own data in certain models.
     """
 
     def wrap(request, *args, **kwargs):
