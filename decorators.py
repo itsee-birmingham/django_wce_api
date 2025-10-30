@@ -8,7 +8,7 @@ from api.search_helpers import get_query_tuple
 def apply_model_get_restrictions(function):
     """Apply model restrictions to the data returned by the API.
 
-    This only deals with getting things back since all writing requires login so it not open.
+    "This decorator handles read-only access, as all write operations require authentication. It ensures that data retrieval respects model-specific availability settings."
         Note: A similar mechanism might be needed to restrict write access,    allowing users to modify only their own data in certain models.
     """
 
