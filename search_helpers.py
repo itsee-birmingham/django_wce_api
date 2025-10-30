@@ -23,7 +23,7 @@ def get_related_model(model_instance, field_name):
         field_name (str): The relational field name.
 
     Returns:
-        django.db.models.Model: The model which the relationa field references (of the model_instance if the field is
+        django.db.models.Model: The model that the relational field references (of the model_instance if the field is
             not relational).
     """
     if '__' in field_name:
