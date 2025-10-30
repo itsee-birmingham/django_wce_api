@@ -465,7 +465,7 @@ class M2MItemDelete(generics.UpdateAPIView):
         return target.objects.all()
 
     def update(self, request, *args, **kwargs):
-        """Update the target object and delte the linked item."""
+        """Update the target object and delete the linked item."""
         instance = self.get_object()
         author = apps.get_model(self.kwargs['app'], self.kwargs['itemmodel']).objects.get(pk=self.kwargs['itempk'])
         getattr(instance, self.kwargs['fieldname']).remove(author)
