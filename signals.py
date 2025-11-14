@@ -19,7 +19,7 @@ def get_subclasses(cls):
 def increment_version(sender, instance, created, **kwargs):
     """Increment the version number in the instance.
 
-    Used for optomistic concurrency checks using etag in request header.
+    Used for optimistic concurrency checks using etag in request header.
     """
     if created is True:
         version_number = 1
