@@ -1,13 +1,19 @@
-from django.http import JsonResponse
 from django.apps import apps
 from django.db.models import Q
-from api import views as api_views
+from django.http import JsonResponse
 
-# TODO: might want something similar so people can only write to their own data in some models
-# this only deals with getting things back since all writing requires login so it not open
+from api.search_helpers import get_query_tuple
 
 
 def apply_model_get_restrictions(function):
+    """Apply model restrictions to the data returned by the API.
+
+    This decorator handles read-only access, as all write operations require authentication. It ensures that data
+    retrieval respects model-specific availability settings.
+
+    Note: A similar mechanism might be needed to restrict write access, allowing users to modify only their own data in
+    certain models.
+    """
 
     def wrap(request, *args, **kwargs):
         target = apps.get_model(kwargs['app'], kwargs['model'])
@@ -49,9 +55,9 @@ def apply_model_get_restrictions(function):
             # return server error if not
             if 'public' not in target.get_fields() or 'project' not in target.get_fields():
                 return JsonResponse(
-                        {'message': "Internal server error - model configuation incompatible with API (code 10002)"},
-                        status=500
-                        )
+                    {'message': "Internal server error - model configuation incompatible with API (code 10002)"},
+                    status=500,
+                )
 
             if not request.user.is_authenticated:  # we are not logged in
                 # then you only get the public ones
@@ -76,23 +82,22 @@ def apply_model_get_restrictions(function):
             query = Q()
             query |= Q(('public', True))
             for field in user_fields:
-                query_tuple = api_views.get_query_tuple(user_fields[field], field, request.user)
+                query_tuple = get_query_tuple(user_fields[field], field, request.user)
                 query |= Q(('project__%s' % (query_tuple[0]), query_tuple[1]))
 
             kwargs['supplied_filter'] = query
             return function(request, *args, **kwargs)
 
         elif availability == 'project':
-
             if not request.user.is_authenticated:  # we are not logged in
                 # You get nothing
                 return JsonResponse({'message': "Authentication required"}, status=401)
 
             if 'project' not in target.get_fields():
                 return JsonResponse(
-                        {'message': "Internal server error - model configuation incompatible with API (code 10003)"},
-                        status=500
-                        )
+                    {'message': "Internal server error - model configuation incompatible with API (code 10003)"},
+                    status=500,
+                )
 
             # a project must be specified in any request to a model of this type
             if 'project__id' not in request.GET and 'project' not in request.GET:
@@ -119,22 +124,21 @@ def apply_model_get_restrictions(function):
 
             query = Q()
             for field in user_fields:
-                query_tuple = api_views.get_query_tuple(user_fields[field], field, request.user)
+                query_tuple = get_query_tuple(user_fields[field], field, request.user)
                 query |= Q(('project__%s' % (query_tuple[0]), query_tuple[1]))
             kwargs['supplied_filter'] = query
             return function(request, *args, **kwargs)
 
         elif availability == 'project_or_user':
-
             if not request.user.is_authenticated:  # we are not logged in
                 # You get nothing
                 return JsonResponse({'message': "Authentication required"}, status=401)
 
             if 'project' not in target.get_fields():
                 return JsonResponse(
-                        {'message': "Internal server error - model configuation incompatible with API (code 10003)"},
-                        status=500
-                        )
+                    {'message': "Internal server error - model configuation incompatible with API (code 10003)"},
+                    status=500,
+                )
 
             # a project must be specified in any request to a model of this type
             if 'project__id' not in request.GET and 'project' not in request.GET:
@@ -148,9 +152,9 @@ def apply_model_get_restrictions(function):
             user_fields = project_model.get_user_fields()
 
             # first add the user as a field since this is project_or_user
-            query = Q(api_views.get_query_tuple('ForeignKey', 'user', request.user))
+            query = Q(get_query_tuple('ForeignKey', 'user', request.user))
             for field in user_fields:
-                query_tuple = api_views.get_query_tuple(user_fields[field], field, request.user)
+                query_tuple = get_query_tuple(user_fields[field], field, request.user)
                 query |= Q(('project__%s' % (query_tuple[0]), query_tuple[1]))
 
             kwargs['supplied_filter'] = query
@@ -163,9 +167,9 @@ def apply_model_get_restrictions(function):
             # return server error if not
             if 'public' not in target.get_fields():
                 return JsonResponse(
-                        {'message': "Internal server error - model configuation incompatible with API (code 10004)"},
-                        status=500
-                        )
+                    {'message': "Internal server error - model configuation incompatible with API (code 10004)"},
+                    status=500,
+                )
 
             if not request.user.is_authenticated:  # we are not logged in
                 # then you only get the public ones
@@ -199,8 +203,7 @@ def apply_model_get_restrictions(function):
         else:
             # just to be sure
             return JsonResponse(
-                    {'message': "Internal server error - model availability incompatible with API (code 10005)"},
-                    status=500
-                    )
+                {'message': "Internal server error - model availability incompatible with API (code 10005)"}, status=500
+            )
 
     return wrap

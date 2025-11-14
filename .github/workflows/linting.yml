@@ -1,0 +1,38 @@
+name: linting
+
+on: [push]
+
+jobs:
+  ruff:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    - name: Install Dependencies
+      run: |
+        pip install ruff
+    - name: Run ruff
+      run: |
+        ruff check .
+        ruff format --check --diff .
+
+  eslint:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies and lint
+        run: |
+          npm i eslint 
+          npm i @stylistic/eslint-plugin
+          node_modules/eslint/bin/eslint.js static/api/js/*.js

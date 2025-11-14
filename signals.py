@@ -1,8 +1,10 @@
 from django.db.models.signals import post_save
+
 from .models import BaseModel
 
 
 def get_subclasses(cls):
+    """Get all the models that inherit BaseModel so that post_save connect can be attached."""
     result = [cls]
     classes_to_inspect = [cls]
     while classes_to_inspect:
@@ -15,6 +17,10 @@ def get_subclasses(cls):
 
 
 def increment_version(sender, instance, created, **kwargs):
+    """Increment the version number in the instance.
+
+    Used for optimistic concurrency checks using etag in request header.
+    """
     if created is True:
         version_number = 1
     else:
